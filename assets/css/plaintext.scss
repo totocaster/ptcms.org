@@ -1,0 +1,90 @@
+// Standard system fonts for clean typography
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Monospace for code
+code, pre {
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+}
+
+// Serif option for headings (optional, can be removed if not needed)
+h1, h2, h3, h4, h5, h6 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600;
+}
+
+// Readable width for content
+.site-main {
+  max-width: 65ch;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+// Header and footer same width as content, centered
+.site-header,
+.site-footer {
+  max-width: 65ch;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+// Header layout
+.site-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.site-identity {
+  text-align: center;
+}
+
+// Logo styling
+.site-logo {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.site-logo svg {
+  max-width: 60%;
+  height: auto;
+  display: block;
+  margin: 40pt auto 10pt auto;
+}
+
+// Horizontal navigation menu
+.site-nav {
+  margin-bottom: 4rem;
+}
+
+.site-nav ul {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.site-nav li {
+  margin: 0;
+}
+
+// Links styling - black with underline
+a {
+  color: #000;
+  text-decoration: underline;
+}
+
+// Footer centered
+.site-footer {
+  text-align: center;
+}
+

@@ -1,0 +1,29 @@
+baseURL = 'https://plaintextcommons.org/'
+title = 'Plaintext Commons'
+
+languageCode = "us-en"
+DefaultContentLanguage = "en"
+
+enableEmoji = true
+enableGitInfo = false
+enableRobotsTXT = true
+canonifyURLs = false # breaks css since all links are no longer relative
+
+disableKinds = ["taxonomy", "term"]
+
+[params]
+  author = "Plaintext Commons"
+  sitename = "Plaintext Commons"
+  description = "The manifesto and reference hub for the Plaintext Commons."
+  tagline = "Knowledge should outlast software."
+
+[languages]
+  [languages.en]
+    languageName = "English"
+    languageCode = "en-us"
+    weight = 1
+
+[outputs]
+  home = ["HTML", "RSS"]
+  section = ["HTML"]
+  page = ["HTML"]
