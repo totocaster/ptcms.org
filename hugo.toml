@@ -4,6 +4,8 @@ title = 'Plaintext Commons'
 languageCode = "us-en"
 DefaultContentLanguage = "en"
 
+uglyURLs = true
+
 enableEmoji = true
 enableGitInfo = false
 enableRobotsTXT = true
@@ -24,6 +26,23 @@ disableKinds = ["taxonomy", "term"]
     weight = 1
 
 [outputs]
-  home = ["HTML", "RSS"]
-  section = ["HTML"]
-  page = ["HTML"]
+  home = ["HTML", "RSS", "Markdown"]
+  section = ["HTML", "Markdown"]
+  page = ["HTML", "Markdown"]
+
+[outputFormats]
+  [outputFormats.HTML]
+    mediaType = "text/html"
+    baseName = "index"
+    isHTML = true
+    rel = "canonical"
+    permalinkable = true
+    noUgly = true
+  [outputFormats.Markdown]
+    mediaType = "text/markdown"
+    baseName = "index"
+    isPlainText = true
+    rel = "alternate"
+    suffix = "md"
+    permalinkable = true
+    noUgly = false
