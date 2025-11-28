@@ -56,12 +56,43 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+// IBM Plex Mono for code
+@font-face {
+  font-family: "IBM Plex Mono";
+  src:
+    url("/fonts/ibm-plex-mono/IBMPlexMono-Regular.woff2") format("woff2"),
+    url("/fonts/ibm-plex-mono/IBMPlexMono-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src:
+    url("/fonts/ibm-plex-mono/IBMPlexMono-Italic.woff2") format("woff2"),
+    url("/fonts/ibm-plex-mono/IBMPlexMono-Italic.woff") format("woff");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src:
+    url("/fonts/ibm-plex-mono/IBMPlexMono-Bold.woff2") format("woff2"),
+    url("/fonts/ibm-plex-mono/IBMPlexMono-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 // Monospace for code
 code,
 pre {
   font-family:
-    "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New",
-    monospace;
+    "IBM Plex Mono", "SF Mono", Monaco, "Cascadia Code", "Roboto Mono",
+    Consolas, "Courier New", monospace;
 }
 
 // Headings stay on the same IBM Plex Sans stack
