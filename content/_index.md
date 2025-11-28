@@ -9,7 +9,7 @@ date: 2025-11-28
 
 **Claim:** Today’s models read the same mediums we do—_predominantly text_—and other media (images, audio, video) are readily transcribable into text. The old “human-readable vs machine-readable” trade-off collapses.  
 
-**Consequence:** Store what matters in **plain text (Markdown or .txt)**. Let tools come and go.
+**Consequence:** Store what matters in _plain text (Markdown or .txt)_. Let tools come and go.
 
 
 ## Why now
