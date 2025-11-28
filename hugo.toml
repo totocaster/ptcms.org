@@ -13,6 +13,11 @@ canonifyURLs = false # breaks css since all links are no longer relative
 
 disableKinds = ["taxonomy", "term"]
 
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
 [params]
   author = "Plaintext Commons"
   sitename = "Plaintext Commons"

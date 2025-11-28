@@ -1,8 +1,8 @@
 ---
 title: "Plaintext Commons — Manifesto"
 description: "A design stance for an open corpus: the folder is the platform, the file is the protocol, and writes are previewed and reversible. Tools—including AI models from frontier to local—assist without owning the data."
-version: "1.0"
-date: 2025-11-04
+version: "0.5"
+date: 2025-11-28
 ---
 
 **Premise:** Knowledge should outlast software.  

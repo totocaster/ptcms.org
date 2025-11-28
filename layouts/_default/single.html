@@ -1,11 +1,7 @@
 {{ define "main" }}
 <article class="content">
-  {{ if not .Params.hide_title }}
-    <h1>{{ .Title }}</h1>
-  {{ end }}
   {{ with .Params.summary }}
-    <p class="lede">{{ . }}</p>
-  {{ end }}
-  {{ .Content }}
+  <p class="lede">{{ . }}</p>
+  {{ end }} {{ .Content }}
 </article>
 {{ end }}

@@ -1,6 +1,5 @@
 {{ define "main" }}
 <article class="content home">
-  <h1>{{ .Title }}</h1>
   {{ if or .Params.version .Params.date }}
     <p class="subheading">
       {{ with .Params.version }}
