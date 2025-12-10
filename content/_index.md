@@ -5,21 +5,27 @@ version: "0.2"
 date: 2025-11-28
 ---
 
-**Premise:** Knowledge should outlast software.  
+**Premise:** Knowledge should outlast software.
 
-**Claim:** Today’s models read the same mediums we do—_predominantly text_—and other media (images, audio, video) are readily transcribable into text. The old “human-readable vs machine-readable” trade-off collapses.  
+**Problem:** Most modern software is cloud-first and app-centric. Each product keeps your data in its own format and database, only reluctantly offering exports and brittle imports. 
 
-**Consequence:** Store what matters in _plain text (Markdown or .txt)_. Let tools come and go.
+**Claim:** A single folder of plain text files you control can act as the shared, durable substrate for people, tools, and agents—a neutral commons where no app owns the data and any tool may participate.
+
+**Consequence:** Store what matters in _plain text (Markdown or .txt)_ inside a corpus you own. Let tools come and go; the folder remains the source of truth and the bridge between them.
 
 
 ## Why now
 
-For decades, computers demanded rigid, app-specific formats. Modern tools (including AI) read and reason over text directly. That enables a different architecture:
+For decades, software has demanded rigid, app-specific formats and server-side databases. Each tool became its own silo; connecting them meant exports, imports, and permanent friction.
 
-- **Data is stable** — files you control.  
-- **Tools are interchangeable** — editors, CLIs, and agents operate on those files.  
-- **Intelligence is layered** — indexers and agents understand without owning the data.
+At the same time, two things changed:
+- **Local-first & open formats are resurfacing:** users want data that lives on their machines, in formats they can keep using even if vendors disappear. [^1]
+- **Modern models read and write text directly** — and most other media can be transcribed into text. The supposed gap between “human-readable” and “machine-readable” is now mostly artificial. [^2]
 
+Together, this makes a different architecture viable:
+- **Data is stable** — plain text files in a folder you control.
+- **Tools are interchangeable** — editors, CLIs, and agents operate on those files, not hidden schemas.
+- **Intelligence is layered** — search, indexes, and agents understand the corpus without owning it.
 
 
 ## Core principles (non-negotiables)
@@ -116,3 +122,6 @@ This is a **design stance**, not a membership. Build tools that keep data open, 
 
 
 _The initial version of the manifesto is written by [Toto Tvalavadze](https://ttvl.co)._
+
+[^1]: Martin Kleppmann, Adam Wiggins, Peter van Hardenberg, and Mark McGranaghan. Local-first software: you own your data, in spite of the cloud. 2019 ACM SIGPLAN International Symposium on New Ideas, New Paradigms, and Reflections on Programming and Software (Onward!), October 2019, pages 154–178. [doi:10.1145/3359591.3359737](https://doi.org/10.1145/3359591.3359737)
+[^2]: Large language model (n.d.). In Wikipedia. Retrieved November 28, 2025, from [https://en.wikipedia.org/wiki/Large_language_model](https://en.wikipedia.org/wiki/Large_language_model)

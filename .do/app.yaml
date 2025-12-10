@@ -1,0 +1,14 @@
+name: ptcmsorg
+static_sites:
+  - build_command: rm -r ./public; hugo --destination ./public
+    environment_slug: hugo
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: totocaster/ptcms.org
+    name: ptcmsorg
+    env:
+      - key: HUGO_VERSION
+        value: '0.139.0'
+      - key: HUGO_EXTENDED
+        value: '1'
