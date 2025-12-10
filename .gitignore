@@ -5,6 +5,8 @@ hugo_stats.json
 .hugo_build.lock
 .hugo_cache/
 
+.do/
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -34,5 +36,3 @@ pnpm-debug.log*
 *.swp
 *.swo
 *.tmp
-
-
