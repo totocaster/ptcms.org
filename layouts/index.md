@@ -2,7 +2,7 @@
 # {{ .Title }}
 
 {{ if or .Params.version .Params.date }}
-> {{ with .Params.version }}Version {{ . }}{{ end }}{{ if and .Params.version .Params.date }} · {{ end }}{{ with .Params.date }}{{ . | time.AsTime | time.Format "2006-01-02" }}{{ end }}
+> {{ with .Params.version }}Version {{ partial "version-value.html" . }}{{ end }}{{ if and .Params.version .Params.date }} · {{ end }}{{ with .Params.date }}{{ . | time.AsTime | time.Format "2006-01-02" }}{{ end }}
 
 {{ end }}
 {{ with .Params.summary }}

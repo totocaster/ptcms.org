@@ -1,0 +1,35 @@
+{{ $page := .page }}
+{{ $showVersions := .showVersions }}
+{{ $sourcePath := default "/" $page.Params.proxy_source }}
+{{ $source := cond (eq $sourcePath "/") $page.Site.Home ($page.Site.GetPage $sourcePath) }}
+
+<article class="content">
+  {{ partial "page-meta.html" $page }}
+  <h1>{{ $page.Title }}</h1>
+  {{ with $page.Params.summary }}
+    <p class="lede">{{ . }}</p>
+  {{ end }}
+  {{ if $source }}
+    {{ $source.Content }}
+  {{ else }}
+    {{ $page.Content }}
+  {{ end }}
+  {{ if $showVersions }}
+    {{ $versions := $page.Pages }}
+    {{ if gt (len $versions) 0 }}
+      <h2>Versions</h2>
+      <ul class="page-list">
+        {{ range $versions.ByTitle.Reverse }}
+          <li>
+            <a href="{{ .RelPermalink }}">
+              <span class="page-title">{{ .Title }}</span>
+              {{ with .Params.version }}
+                <span class="page-summary">Version {{ partial "version-value.html" . }}</span>
+              {{ end }}
+            </a>
+          </li>
+        {{ end }}
+      </ul>
+    {{ end }}
+  {{ end }}
+</article>

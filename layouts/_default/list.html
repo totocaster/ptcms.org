@@ -1,6 +1,7 @@
 {{ define "main" }}
 <section class="content">
   {{ .Content }}
+  {{ if gt (len .Pages) 0 }}
   <ul class="page-list">
     {{ range .Pages }}
     <li>
@@ -13,5 +14,6 @@
     </li>
     {{ end }}
   </ul>
+  {{ end }}
 </section>
 {{ end }}

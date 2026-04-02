@@ -6,6 +6,9 @@ description: "Key terms used across the Plaintext Commons."
 # Glossary
 
 <dl class="glossary-list">
+<dt>Plaintext Tasks</dt>
+<dd>A strict plain-text task format with headings, checklist states, notes, metadata lines, indentation-based subtasks, and an optional archive region. See <a href="/tasks/">Plaintext Tasks</a> for the current spec and version history.</dd>
+
 <dt>plaintext files</dt>
 <dd>Human-readable documents in Markdown or .txt.</dd>
 

@@ -25,6 +25,8 @@ disableKinds = ["taxonomy", "term"]
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
+  [markup.highlight]
+    noClasses = false
 
 [params]
   author = "Plaintext Commons"

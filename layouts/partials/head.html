@@ -1,12 +1,18 @@
 {{ $pageTitle := cond .IsHome .Site.Title (printf "%s — %s" .Title .Site.Title) }}
+{{ $canonical := .Permalink }}
+{{ if .IsHome }}
+  {{ with .Site.GetPage "/manifesto" }}
+    {{ $canonical = .Permalink }}
+  {{ end }}
+{{ end }}
 <title>{{ $pageTitle }}</title>
 <meta name="description" content="{{ with .Params.description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}" />
-<link rel="canonical" href="{{ .Permalink }}" />
+<link rel="canonical" href="{{ $canonical }}" />
 
 <meta property="og:title" content="{{ $pageTitle }}" />
 <meta property="og:site_name" content="{{ .Site.Params.sitename }}" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="{{ .Permalink }}" />
+<meta property="og:url" content="{{ $canonical }}" />
 <meta property="og:description" content="{{ with .Params.description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}" />
 {{ with .Site.Params.og_image }}
   <meta property="og:image" content="{{ . | absURL }}" />

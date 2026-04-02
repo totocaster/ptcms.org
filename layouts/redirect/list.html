@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.Language.Lang }}">
+  <head>
+    {{ $target := .Params.redirect_to | absURL }}
+    <title>{{ $target }}</title>
+    <link rel="canonical" href="{{ $target }}">
+    <meta name="robots" content="noindex">
+    <meta charset="utf-8">
+    <meta http-equiv="refresh" content="0; url={{ $target }}">
+  </head>
+</html>

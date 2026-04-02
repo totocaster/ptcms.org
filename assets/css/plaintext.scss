@@ -141,9 +141,79 @@ h2 {
   text-align: left;
 }
 
+.page-list {
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.page-list li {
+  margin: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.page-list a {
+  display: block;
+  padding: 0.9rem 0;
+  text-decoration: none;
+}
+
+.page-list a:hover,
+.page-list a:focus-visible {
+  background-color: rgba(0, 0, 0, 0.03);
+  outline: none;
+}
+
+.page-title,
+.page-summary {
+  display: block;
+}
+
+.page-title {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.page-summary {
+  margin-top: 0.18rem;
+  color: rgba(0, 0, 0, 0.68);
+}
+
 .subheading {
   background-color: rgba(0, 0, 0, 0.06);
   padding: 0.5em 1em;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.subheading .value {
+  font-weight: 600;
+}
+
+.subheading .sep {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+pre {
+  background-color: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+}
+
+:not(pre) > code {
+  background-color: rgba(0, 0, 0, 0.04);
+  padding: 0.1em 0.35em;
+}
+
+blockquote {
+  margin: 1.25rem 0;
+  padding-left: 1rem;
+  border-left: 2px solid rgba(0, 0, 0, 0.18);
 }
 
 // Readable width for content
