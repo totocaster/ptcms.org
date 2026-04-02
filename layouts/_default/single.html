@@ -1,5 +1,6 @@
 {{ define "main" }}
 <article class="content">
+  {{ partial "page-meta.html" . }}
   {{ with .Params.summary }}
   <p class="lede">{{ . }}</p>
   {{ end }} {{ .Content }}

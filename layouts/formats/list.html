@@ -1,0 +1,20 @@
+{{ define "main" }}
+<section class="content">
+  {{ .Content }}
+  {{ $families := where .Site.Sections "Params.catalog" "formats" }}
+  {{ if gt (len $families) 0 }}
+  <ul class="page-list">
+    {{ range $families.ByWeight }}
+    <li>
+      <a href="{{ .RelPermalink }}">
+        <span class="page-title">{{ .Title }}</span>
+        {{ with .Params.summary }}
+        <span class="page-summary">{{ . }}</span>
+        {{ end }}
+      </a>
+    </li>
+    {{ end }}
+  </ul>
+  {{ end }}
+</section>
+{{ end }}

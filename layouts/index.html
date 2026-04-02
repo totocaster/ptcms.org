@@ -1,16 +1,6 @@
 {{ define "main" }}
 <article class="content home">
-  {{ if or .Params.version .Params.date }}
-    <p class="subheading">
-      {{ with .Params.version }}
-        <span class="version">Version <span class="value">{{ . }}</span></span>
-      {{ end }}
-      {{ if and .Params.version .Params.date }} <span class="sep">&sdot;</span> {{ end }}
-      {{ with .Params.date }}
-        <time class="date" datetime="{{ . | time.AsTime | time.Format "2006-01-02" }}">{{ . | time.AsTime | time.Format "2006-01-02" }}</time>
-      {{ end }}
-    </p>
-  {{ end }}
+  {{ partial "page-meta.html" . }}
   {{ with .Params.summary }}
     <p class="lede">{{ . }}</p>
   {{ end }}

@@ -1,0 +1,9 @@
+{{- $version := printf "%v" . -}}
+{{- $parts := split $version "." -}}
+{{- if eq (len $parts) 1 -}}
+  {{- printf "%s.0.0" $version -}}
+{{- else if eq (len $parts) 2 -}}
+  {{- printf "%s.0" $version -}}
+{{- else -}}
+  {{- $version -}}
+{{- end -}}
