@@ -258,7 +258,7 @@
       var o = p.o;
       if (p.type !== 'record' && p.type !== 'event') return;
       if (has(o, 'id')) {
-        // Both lines that share an id are in error, so a reader ignores both (§12, question 4).
+        // Both lines that share an id are in error; a reader ignores both (§10, duplicate_id).
         var ik = JSON.stringify(o.id), first = ids[ik];
         if (first) {
           if (!first.flagged) { first.flagged = true; add(first.n, P('error', 'duplicate_id', 'M-57', 'The id ' + show(o.id) + ' is used again on line ' + p.n + '.')); }

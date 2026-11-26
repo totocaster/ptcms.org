@@ -9,7 +9,7 @@
 - { name: "out_of_range", level: "error", rules: ["M-44"], when: "A value breaks its kind." }
 - { name: "unit_mismatch", level: "error", rules: ["M-51"], when: "A record's unit is not allowed, or is missing when the definition lists several." }
 - { name: "bad_span", level: "error", rules: ["M-48"], when: "until without at, or earlier than it." }
-- { name: "duplicate_id", level: "error", rules: ["M-57"], when: "Two lines share an id." }
+- { name: "duplicate_id", level: "error", rules: ["M-57"], when: "Two lines share an id. Readers ignore both." }
 - { name: "header", level: "error", rules: ["M-16"], when: "No header line, or more than one." }
 - { name: "missing_event", level: "warning", rules: ["M-64"], when: "of names an id that no event line has." }
 - { name: "duplicate_ref", level: "warning", rules: ["M-58"], when: "Two lines share the same by and ref." }
