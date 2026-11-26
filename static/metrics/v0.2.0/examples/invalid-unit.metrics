@@ -1,0 +1,4 @@
+{"format":"plaintext-metrics/0.2.0","set":"example/unit"}
+{"define":"distance","v":1,"kind":"quantity","unit":["km","m"],"combine":"sum"}
+{"at":"2026-11-26T07:30+01:00","metric":"distance","v":1,"value":10.2}
+{"at":"2026-11-27T07:30+01:00","metric":"distance","v":1,"value":6,"unit":"mi"}

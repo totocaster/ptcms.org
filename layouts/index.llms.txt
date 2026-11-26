@@ -1,0 +1,29 @@
+# Plaintext Commons
+
+> {{ site.Params.description }} Every page on this site is also plain Markdown: add index.md to its address.
+
+The manifesto sets out the stance: a folder of plain text files you control is the system of record, and tools assist without owning it. The formats are versioned specifications. Each version lives at a frozen address and its rules have stable IDs (such as T-10) that can be cited.
+
+## Manifesto
+
+- [Manifesto]({{ "/manifesto/index.md" | absURL }}): nine principles, three laws, norms for tools and agents, the Plaintext Test.
+- [Glossary]({{ "/glossary/index.md" | absURL }}): key terms.
+{{- with site.GetPage "/manifesto/history" }}
+- [Manifesto history]({{ .Permalink }}index.md): what changed between versions, and why.
+{{- end }}
+
+## Formats
+{{ range site.Sections.ByWeight }}{{ if .Params.shortname }}{{ $fmt := . }}
+- [{{ .Title }}]({{ .Permalink }}index.md): {{ .Params.summary }} Extension `{{ .Params.extension }}`, status {{ .Params.status }}.
+{{- range (where .RegularPages "Type" "spec").ByDate.Reverse }}
+- [{{ $fmt.Title }} {{ .Params.version }} specification]({{ .Permalink }}index.md){{ with .OutputFormats.Get "Rules" }}: rules as JSON at {{ .Permalink }}{{ end }}
+{{- end }}
+{{- range (where .RegularPages "Params.role" "in" (slice "guide" "atlas" "companion")).ByWeight }}
+- [{{ .Params.navTitle | default .Title }} ({{ $fmt.Title }})]({{ .Permalink }}index.md): {{ .Params.summary }}
+{{- end }}
+{{ end }}{{ end }}
+## Optional
+
+- [Formats catalogue]({{ "formats.json" | absURL }}): every format, version, status and address as JSON.
+- [How formats mature]({{ "/formats/process/index.md" | absURL }}): lifecycle, version and address rules, how to propose a format.
+- [About this site]({{ "/about/index.md" | absURL }})

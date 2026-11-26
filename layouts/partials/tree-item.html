@@ -1,0 +1,9 @@
+{{- $p := .p -}}
+{{- $isCur := eq .cur $p -}}
+<li>
+  <a href="{{ $p.RelPermalink }}"{{ if $isCur }} aria-current="page"{{ end }}>{{ .label }}{{ with .ver }} <span class="ver">{{ . }}</span>{{ end }}</a>
+  {{- if $isCur }}
+  {{- $toc := partial "toc.html" $p }}
+  {{- with $toc }}<ul class="toc">{{ . }}</ul>{{ end }}
+  {{- end }}
+</li>

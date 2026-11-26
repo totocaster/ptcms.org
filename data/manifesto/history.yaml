@@ -1,0 +1,178 @@
+# Manifesto history: versions, newest first, and the changes between the two newest.
+#
+# Each change quotes the draft (`before`) and 0.2.0 (`after`) line for line, without
+# Markdown emphasis. The two lists run in parallel: a row whose two lines are equal is
+# unchanged context, a row with different lines is a removal followed by an addition,
+# and `~` marks a row with no line on that side. Drop the `~` rows and each list reads
+# exactly as its source.
+#
+# Leave `why` empty until the reason is known; the page then says so.
+
+versions:
+  - version: "0.2.0"
+    status: "Current"
+    date: "2025-11-28"
+    url: "/manifesto/v0.2.0/"
+    note: ""
+  - version: "Draft"
+    status: "Superseded"
+    date: "2025-11-05"
+    url: ""
+    note: "First published at `ttvl.co/plaintext-commons/`."
+
+changes:
+  - id: "opening"
+    title: "Opening"
+    short: "Opening"
+    kind: "changed"
+    summary: "The title drops “The”. A Problem statement is added, the Claim is rewritten around one folder you control, and the Consequence names the corpus."
+    before:
+      - "The Plaintext Commons — Manifesto"
+      - "Premise: Knowledge should outlast software."
+      - ~
+      - "Claim: Modern AI reads and reasons over human-legible text; rigid, app-specific formats are rarely needed for everyday thinking and work."
+      - "Consequence: Store what matters in open, plain-text (Markdown or .txt) files. Let tools come and go."
+    after:
+      - "Plaintext Commons — Manifesto"
+      - "Premise: Knowledge should outlast software."
+      - "Problem: Most modern software is cloud-first and app-centric. Each product keeps your data in its own format and database, only reluctantly offering exports and brittle imports."
+      - "Claim: A single folder of plain text files you control can act as the shared, durable substrate for people, tools, and agents—a neutral commons where no app owns the data and any tool may participate."
+      - "Consequence: Store what matters in plain text (Markdown or .txt) inside a corpus you own. Let tools come and go; the folder remains the source of truth and the bridge between them."
+    why: ""
+    note: ""
+
+  - id: "law-1"
+    title: "The three laws: law 1"
+    short: "Law 1"
+    kind: "changed"
+    summary: "“Vault” becomes “corpus”; the folder is the system of record."
+    before:
+      - "1. The folder is the platform."
+      - "One vault of files. The folder—not an app—is your \"database.\""
+    after:
+      - "1. The folder is the platform."
+      - "One corpus—a folder of open files—acts as the system of record."
+    why: ""
+    note: ""
+
+  - id: "law-2"
+    title: "The three laws: law 2"
+    short: "Law 2"
+    kind: "changed"
+    summary: "Tighter wording. The sidecar mention leaves the law."
+    before:
+      - "2. The file is the protocol."
+      - "Use stable, human-readable documents (plain text—Markdown or .txt—with optional front matter or sidecar metadata). No opaque blobs."
+    after:
+      - "2. The file is the protocol."
+      - "Stable, human-readable plain text (Markdown or .txt) with optional frontmatter. No opaque blobs."
+    why: ""
+    note: ""
+
+  - id: "law-3"
+    title: "The three laws: law 3"
+    short: "Law 3"
+    kind: "changed"
+    summary: "“The diff is the transaction” becomes “Writes are previewed and reviewable”."
+    before:
+      - "3. The diff is the transaction."
+      - "Tools—human or AI—propose changes as diffs. You approve and commit. Everything is auditable."
+      - ~
+      - ~
+    after:
+      - ~
+      - ~
+      - "3. Writes are previewed and reviewable."
+      - "Tools propose changes; you preview and accept; a simple log/history preserves why changes happened, not just what changed."
+    why: ""
+    note: ""
+
+  - id: "principles"
+    title: "Core principles: ten become nine"
+    short: "Principles"
+    kind: "changed"
+    summary: "Ten become nine: two dropped, two renamed, one added. Five of the six that stay are reworded."
+    before:
+      - "Files over apps. Your vault is the system of record. Apps are lenses."
+      - "Plain text by default. Markdown or plain .txt, with simple sidecars (YAML/JSON) before anything else."
+      - "Open folder, open future. A standard directory you can sync, back up, grep, and version."
+      - "Agents assist, they don't annex. No tool gets to hold your data hostage."
+      - "Diffs, not silent writes. Changes are proposed, inspected, and committed—human in the loop."
+      - "Hybrid retrieval, zero lock-in. Search, embeddings, and graphs index the vault; they never become the vault."
+      - "Composability beats monoliths. Many small tools on one shared corpus > one \"mega-app.\""
+      - "Minimum ceremony. Conventions only where they pay for themselves (naming, anchors, front matter/sidecars)."
+      - "Portability and durability. Ten years from now, the files still open and make sense."
+      - "Privacy first. Local-by-default. Cloud only with explicit consent."
+      - ~
+    after:
+      - "Files over apps. Your corpus (a folder of open files) is the system of record."
+      - "Plain text by default. Use Markdown or .txt; keep light metadata in frontmatter (or a tiny sidecar file for .txt when necessary)."
+      - ~
+      - "Tools assist, they don’t annex. No tool owns the data or invents a private schema that captures it."
+      - "Writes are previewed and reversible. Tools propose changes; you review and apply; changes have a clear provenance trail."
+      - ~
+      - "Composability beats monoliths. Many small tools on one shared corpus."
+      - "Minimum ceremony. Conventions only where they pay for themselves (naming, links, frontmatter)."
+      - "Portability and durability. Ten years from now, the files still open and make sense."
+      - "Privacy first. Local by default; use cloud only with explicit consent."
+      - "No exports. No migrations. The folder is the platform."
+    why: ""
+    note: "Two principles were renamed rather than replaced: “agents” widened to “tools”, and “diffs” to previewed, reversible writes."
+
+  - id: "sections"
+    title: "Sections"
+    short: "Sections"
+    kind: "changed"
+    summary: "Four sections removed, one added, two renamed. Section numbers are dropped."
+    before:
+      - "Why now"
+      - "Non-negotiables"
+      - "The three laws of the Commons"
+      - "Multi-tool by design"
+      - "Minimal working conventions"
+      - "Norms for tools and agents"
+      - "Reference implementations (tool-agnostic, not required)"
+      - "Boundaries and honest exceptions"
+      - "Adoption path (practical, not sacred)"
+      - "What this is—and isn't"
+      - "The Plaintext Test"
+      - "The pledge"
+      - ~
+    after:
+      - "Why now"
+      - "Core principles (non-negotiables)"
+      - "The three laws of the Commons"
+      - "Multi-tool by design"
+      - "Minimal working conventions"
+      - "Norms for tools (agents included)"
+      - ~
+      - ~
+      - "Adoption path (practical, not sacred)"
+      - ~
+      - "The Plaintext Test"
+      - ~
+      - "Industry note"
+    why: ""
+    note: ""
+
+  - id: "plaintext-test"
+    title: "The Plaintext Test"
+    short: "Plaintext Test"
+    kind: "changed"
+    summary: "The lead-in and questions 1–3 are reworded. Every answer must now be yes."
+    before:
+      - "Before adopting a tool or workflow, ask:"
+      - "1. Can I read the raw files with a basic text editor?"
+      - "2. Can I move the folder to another machine and keep working?"
+      - "3. Can an agent propose diffs without a proprietary API?"
+      - "4. Will this still make sense in ten years?"
+      - "If the answer isn't \"yes\" to most of the above, it's not Commons-compatible."
+    after:
+      - "Ask this before adopting a tool or workflow:"
+      - "1. Can I read/edit the files with a basic text editor?"
+      - "2. Can I move the folder and keep working—no exports required?"
+      - "3. Can the tool propose a human-auditable preview of changes (with rationale) before writing?"
+      - "4. Will this still make sense in ten years?"
+      - "If not, it’s not Commons-compatible."
+    why: ""
+    note: "The bar moved from “most” to “every”: a tool that fails one question is not Commons-compatible."

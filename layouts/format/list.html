@@ -1,0 +1,77 @@
+{{ define "main" }}
+{{- $fmt := . -}}
+{{- $versions := (where .RegularPages "Type" "spec").ByDate.Reverse -}}
+{{- $read := (where .RegularPages "Params.role" "in" (slice "guide" "atlas" "companion")).ByWeight -}}
+{{- $history := where .RegularPages "Params.role" "history" -}}
+{{- $short := .Params.shortname -}}
+<article class="prose">
+  {{ partial "title-block.html" (dict "p" .) }}
+  {{ .Content }}
+
+  <h2 id="versions">Versions</h2>
+  <div class="table-wrap">
+    <table class="booktabs">
+      <thead><tr><th scope="col">Version</th><th scope="col">Status</th><th scope="col">Published</th><th scope="col">Files</th></tr></thead>
+      <tbody>
+        {{- range $versions }}
+        <tr>
+          <td><a class="mono" href="{{ .RelPermalink }}">{{ .Params.version }}</a></td>
+          <td>{{ partial "status.html" .Params.status }}</td>
+          <td>{{ .Date.Format "2006-01-02" }}</td>
+          <td style="font-size: 14px">{{ with .OutputFormats.Get "Markdown" }}<a class="mono" href="{{ .RelPermalink }}">index.md</a>{{ end }}{{ with .OutputFormats.Get "Rules" }} · <a class="mono" href="{{ .RelPermalink }}">rules.json</a>{{ end }}{{ range .Params.files }} · <a class="mono" href="{{ .url }}">{{ path.Base .url }}</a>{{ end }}</td>
+        </tr>
+        {{- end }}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="read">Read</h2>
+  <ul class="page-list">
+    {{- with index $versions 0 }}
+    <li><a href="{{ .RelPermalink }}"><span class="pl-title">Specification {{ .Params.version }}</span><span class="pl-sum">The rules, each with an ID you can cite. Start with the rules at a glance.</span></a></li>
+    {{- end }}
+    {{- range $read }}
+    <li><a href="{{ .RelPermalink }}"><span class="pl-title">{{ .Params.navTitle | default .Title }}</span>{{ with .Params.summary }}<span class="pl-sum">{{ . }}</span>{{ end }}</a></li>
+    {{- end }}
+    {{- range $history }}
+    <li><a href="{{ .RelPermalink }}"><span class="pl-title">History</span><span class="pl-sum">{{ .Params.summary }}</span></a></li>
+    {{- end }}
+  </ul>
+
+  <h2 id="implementations">Implementations</h2>
+  {{- with .Params.implementations }}
+  <ul>
+    {{- range . }}<li>{{ with .url }}<a href="{{ . }}">{{ end }}{{ .name }}{{ with .url }}</a>{{ end }}{{ with .note }}: {{ . | markdownify }}{{ end }}</li>{{ end }}
+  </ul>
+  {{- else }}
+  <p>None listed yet. If you build one, <a href="{{ "/formats/process/" | relURL }}#implementations">tell us about it</a>.</p>
+  {{- end }}
+
+  <h2 id="addresses">Addresses</h2>
+  {{ partial "aside-raw.html" "Frozen version pages are canonical. The moving addresses redirect to them, so links never break." }}
+  <div class="table-wrap">
+    <table class="booktabs">
+      <thead><tr><th scope="col">Address</th><th scope="col">Goes to</th></tr></thead>
+      <tbody>
+        {{- range $versions }}
+        <tr><td class="mono" style="font-size: 14px">/{{ $short }}/v{{ .Params.version }}/</td><td>This exact version, frozen</td></tr>
+        {{- end }}
+        <tr><td class="mono" style="font-size: 14px">/{{ $short }}/latest/</td><td>The newest version</td></tr>
+        {{- with index $versions 0 }}{{ $parts := split .Params.version "." }}
+        <tr><td class="mono" style="font-size: 14px">/{{ $short }}/v{{ index $parts 0 }}/</td><td>The newest {{ index $parts 0 }}.x.y</td></tr>
+        <tr><td class="mono" style="font-size: 14px">/{{ $short }}/v{{ index $parts 0 }}.{{ index $parts 1 }}/</td><td>The newest {{ index $parts 0 }}.{{ index $parts 1 }}.x</td></tr>
+        {{- end }}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="cite">Cite</h2>
+  {{- with index $versions 0 }}{{ $rules := partial "rules.html" . }}
+  <pre>{{ $fmt.Title }} {{ .Params.version }}{{ with $rules }}, rule {{ (index . 0).id }}{{ end }}.
+{{ .Permalink }}{{ with $rules }}#{{ (index . 0).id }}{{ end }}
+
+[{{ upper (replace $fmt.Title " " "-") }}-{{ .Params.version }}]</pre>
+  <p>Name, full version and rule ID in prose; the frozen address with an anchor for links; a bracketed key for reference lists. Avoid citing <span class="mono" style="font-size: 14px">/latest/</span>, which moves.</p>
+  {{- end }}
+</article>
+{{ end }}

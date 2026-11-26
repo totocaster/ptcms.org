@@ -1,0 +1,94 @@
+# Chapter 5: one cell per published example file, from the examples README.
+# Snippets are read from static/metrics/v0.2.0/examples/<file>.metrics at build time; `lines` picks
+# which lines to show, `level` marks a line the checker reports, and `mark` names the fields at fault.
+# `checks` is what a checker reports (the README's "Expected"); the verdict follows from their levels.
+- file: "invalid-undefined-version"
+  title: "A version the file doesn't define"
+  checks: ["undefined"]
+  lines: [{ n: 2 }, { n: 3, level: "error", mark: ["v"] }]
+  gist: "The record cites `book.rating` version 2, and the file defines only version 1, so its 7 has no meaning here."
+  rules: ["M-10", "M-30"]
+- file: "invalid-out-of-range"
+  title: "A score above its maximum"
+  checks: ["out_of_range"]
+  lines: [{ n: 2 }, { n: 3, level: "error", mark: ["value"] }]
+  gist: "8 is recorded against version 1 of `book.rating`, a score from 1 to 5."
+  rules: ["M-44", "M-34"]
+- file: "invalid-missing-header"
+  title: "No header line"
+  checks: ["header"]
+  lines: [{ n: 1 }, { n: 2 }]
+  gist: "No line has `format`, so the file doesn't say what it is or whose definitions it uses."
+  rules: ["M-16", "M-19"]
+- file: "invalid-unit"
+  title: "Two units, and records that don't say which"
+  checks: ["unit_mismatch", "unit_mismatch"]
+  lines: [{ n: 2 }, { n: 3, level: "error" }, { n: 4, level: "error", mark: ["unit"] }]
+  gist: "The definition allows km or m. Line 3 states no unit; line 4 states mi, which isn't on the list."
+  rules: ["M-51", "M-35"]
+- file: "invalid-two-kinds-of-line"
+  title: "An event and a record at once"
+  checks: ["bad_line"]
+  lines: [{ n: 4, level: "error", mark: ["event", "metric"] }]
+  gist: "The line has both `event` and `metric`. Every line is exactly one of the four types."
+  rules: ["M-15"]
+- file: "invalid-span"
+  title: "A span that ends before it starts"
+  checks: ["bad_span"]
+  lines: [{ n: 3, level: "error", mark: ["at", "until"] }]
+  gist: "`until` is 07:30 and `at` is 08:05 on the same morning."
+  rules: ["M-48"]
+- file: "invalid-quantity-without-combine"
+  title: "A quantity that doesn't say how to combine"
+  checks: ["missing_field"]
+  lines: [{ n: 2, level: "error", mark: ["kind"] }, { n: 3 }]
+  gist: "`distance` is a quantity with no `combine`, so nothing says whether a day's distances add up or average."
+  rules: ["M-78", "M-37"]
+- file: "invalid-conflicting-definitions"
+  title: "One name and version, two meanings"
+  checks: ["definition_conflict"]
+  lines: [{ n: 2 }, { n: 3, level: "error", mark: ["unit"] }]
+  gist: "`room.temperature` version 1 is defined twice, once in Cel and once in [degF]. A change of meaning is a new version."
+  rules: ["M-28", "M-29"]
+- file: "edge-missing-event"
+  title: "An `of` with no event"
+  checks: ["missing_event"]
+  lines: [{ n: 3, level: "warning", mark: ["of"] }]
+  gist: "The record names run-1126, which isn't in this file. A reader ignores the `of` and keeps the record."
+  rules: ["M-64", "M-65"]
+- file: "edge-undeclared-label"
+  title: "A label nobody declared"
+  checks: ["undeclared_label"]
+  lines: [{ n: 2 }, { n: 3, level: "warning", mark: ["room"] }]
+  gist: "`room.temperature` declares no labels, so `room` is flagged. The field is kept, and a writer writes it back unchanged."
+  rules: ["M-53", "M-72"]
+- file: "edge-any-order"
+  title: "Record first, header last"
+  checks: []
+  lines: [{ n: 1 }, { n: 2 }, { n: 3 }]
+  gist: "Order means nothing to a reader. A writer should still put the header first ([M-17](/metrics/v0.2.0/#M-17))."
+  rules: ["M-8", "M-18", "M-75"]
+- file: "edge-late-entry"
+  title: "A late entry for an old version"
+  checks: []
+  lines: [{ n: 2 }, { n: 3 }, { n: 5 }]
+  gist: "Line 5 was added after version 2 existed. It cites version 1, so its 5 is read out of 5."
+  rules: ["M-30", "M-8"]
+- file: "edge-definitions-only"
+  title: "Definitions and no records"
+  checks: []
+  lines: [{ n: 1 }, { n: 2 }, { n: 3 }]
+  gist: "A catalog: other files of the set copy their definitions from it."
+  rules: ["M-11", "M-12"]
+- file: "edge-day-after-midnight"
+  title: "After midnight, for the day before"
+  checks: []
+  lines: [{ n: 3 }]
+  gist: "It happened at 00:40 on the 27th, and `date` says it counts toward the 26th."
+  rules: ["M-49"]
+- file: "valid"
+  title: "A complete file"
+  checks: []
+  lines: [{ n: 1 }, { n: 19 }, { n: 20 }]
+  gist: "Twenty-one lines: every kind of definition, two versions of one metric, labels, a list of units, a run with its records, place, and an import."
+  rules: ["M-10", "M-15"]

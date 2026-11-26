@@ -1,0 +1,29 @@
+{{- $formats := slice -}}
+{{- range site.Sections.ByWeight -}}
+  {{- if .Params.shortname -}}
+    {{- $versions := slice -}}
+    {{- range (where .RegularPages "Type" "spec").ByDate.Reverse -}}
+      {{- $v := dict "version" .Params.version "status" .Params.status "published" (.Date.Format "2006-01-02") "url" .Permalink "markdown" (printf "%sindex.md" .Permalink) -}}
+      {{- with .OutputFormats.Get "Rules" }}{{ $v = merge $v (dict "rules" .Permalink) }}{{ end -}}
+      {{- range .Params.files }}{{ $v = merge $v (dict (.key | default "file") (.url | absURL)) }}{{ end -}}
+      {{- $versions = $versions | append $v -}}
+    {{- end -}}
+    {{- $guides := slice -}}
+    {{- range (where .RegularPages "Params.role" "in" (slice "guide" "atlas" "companion" "history")).ByWeight -}}
+      {{- $guides = $guides | append (dict "title" (.Params.navTitle | default .Title) "kind" .Params.role "url" .Permalink "markdown" (printf "%sindex.md" .Permalink)) -}}
+    {{- end -}}
+    {{- $short := .Params.shortname -}}
+    {{- $formats = $formats | append (dict
+        "name" .Title
+        "shortname" $short
+        "extension" .Params.extension
+        "summary" .Params.summary
+        "status" .Params.status
+        "latest" .Params.latest
+        "url" .Permalink
+        "latest_url" (printf "/%s/latest/" $short | absURL)
+        "versions" $versions
+        "guides" $guides) -}}
+  {{- end -}}
+{{- end -}}
+{{- dict "name" site.Title "url" site.BaseURL "manifesto" ("/manifesto/" | absURL) "formats" $formats | jsonify (dict "indent" "  ") -}}

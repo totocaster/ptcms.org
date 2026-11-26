@@ -1,0 +1,3 @@
+{{- /* Block margin note, placed just before the paragraph it annotates.
+       {{< aside >}} Markdown, including code fences {{< /aside >}} */ -}}
+<aside class="marginnote">{{ .Inner | .Page.RenderString (dict "display" "block") }}</aside>

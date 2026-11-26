@@ -1,0 +1,16 @@
+# The checks of §10, in the specification's order, with the rules this page's checker cites
+# when it reports each one. The checker is static/js/metrics.js, a port of drafts/check_examples.py.
+- { name: "bad_json", level: "error", rules: ["M-5", "M-2"], when: "The line is not JSON, or not an object." }
+- { name: "bad_line", level: "error", rules: ["M-15"], when: "The line has none, or more than one, of format, define, metric and event." }
+- { name: "missing_field", level: "error", rules: ["M-19", "M-24", "M-33", "M-34", "M-42", "M-55", "M-61", "M-78"], when: "A required field is absent." }
+- { name: "bad_value", level: "error", rules: ["M-20", "M-25", "M-26", "M-27", "M-34", "M-35", "M-37", "M-40", "M-41", "M-43", "M-45", "M-47", "M-48", "M-54", "M-55", "M-59", "M-62"], when: "A field has the wrong form." }
+- { name: "undefined", level: "error", rules: ["M-10", "M-63"], when: "A record or event cites a name and version the file does not define, or a definition of the wrong kind." }
+- { name: "definition_conflict", level: "error", rules: ["M-29"], when: "Two definitions with the same name and version differ." }
+- { name: "out_of_range", level: "error", rules: ["M-44"], when: "A value breaks its kind." }
+- { name: "unit_mismatch", level: "error", rules: ["M-51"], when: "A record's unit is not allowed, or is missing when the definition lists several." }
+- { name: "bad_span", level: "error", rules: ["M-48"], when: "until without at, or earlier than it." }
+- { name: "duplicate_id", level: "error", rules: ["M-57"], when: "Two lines share an id." }
+- { name: "header", level: "error", rules: ["M-16"], when: "No header line, or more than one." }
+- { name: "missing_event", level: "warning", rules: ["M-64"], when: "of names an id that no event line has." }
+- { name: "duplicate_ref", level: "warning", rules: ["M-58"], when: "Two lines share the same by and ref." }
+- { name: "undeclared_label", level: "warning", rules: ["M-53", "M-67"], when: "A field is neither a field of the format nor declared by the definition." }

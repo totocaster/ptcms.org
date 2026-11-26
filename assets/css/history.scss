@@ -1,0 +1,58 @@
+/* Manifesto history: versions timeline, change bars and inline diffs.
+   Colour stays inside the diffs: green tint for added lines, rose tint for removed. */
+
+/* "Current" uses the same soft grey fill as Draft: no black borders on status labels. */
+.status--current { background: #EDEDEA; border-color: #EDEDEA; color: #4D4D4D; }
+
+.history-meta { margin-top: 16px; }
+.history-lede { font-size: 14px; line-height: 1.5; color: var(--muted); }
+.why-missing { color: var(--muted); }
+.hist-date { white-space: nowrap; }
+.hist-addr code { overflow-wrap: anywhere; }
+
+/* ----- Versions timeline ----- */
+.timeline { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 1.5rem; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.timeline .mono { font-size: 12.5px; }
+.tl-dot { flex: none; width: 8px; height: 8px; border: 1.5px solid var(--ink); border-radius: 50%; }
+.tl-dot--current { background: var(--ink); }
+.tl-line { flex: 1 1 40px; max-width: 300px; height: 1px; background: var(--ink); }
+
+/* ----- Change bars ----- */
+.bars { display: inline-flex; align-items: center; gap: 2px; vertical-align: middle; }
+.bar { display: inline-block; flex: none; width: 7px; height: 7px; }
+.bar--del { background: var(--rose-mid); }
+.bar--add { background: var(--green-mid); }
+.bar--del + .bar--add { margin-left: 4px; }
+
+.diff-key p { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13.5px; }
+.diff-key .bar { width: 8px; height: 8px; }
+.diff-key .k-del { color: var(--rose); margin-right: 8px; }
+.diff-key .k-add { color: var(--green); }
+
+.glance { min-width: 640px; }
+.glance-where, .glance-size { white-space: nowrap; }
+.glance-n { font-size: 12.5px; color: var(--muted); }
+.glance .why-missing { white-space: nowrap; }
+
+/* ----- Inline diffs ----- */
+.diff { margin: 0 0 1rem; font-size: 15.5px; line-height: 1.55; }
+.diff-line { display: flex; padding: 5px 10px 5px 0; color: var(--ink); text-decoration: none; }
+.diff-line--ctx { color: var(--ink-2); }
+.diff-line--add { background: var(--green-tint); }
+.diff-line--del { background: var(--rose-tint); }
+.diff-mark { flex: none; width: 28px; text-align: center; font-weight: 600; }
+.diff-line--add .diff-mark { color: var(--green); }
+.diff-line--del .diff-mark { color: var(--rose); }
+.diff-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+
+/* Wide screens: the reason sits in the margin beside its diff.
+   Narrower, it follows the diff, after the site's margin notes collapse. */
+@media (min-width: 1241px) {
+  .change { display: grid; grid-template-columns: minmax(0, 1fr) var(--margin); column-gap: var(--gap); margin-right: calc(-1 * (var(--gap) + var(--margin))); }
+  .change > * { grid-column: 1; }
+  .change > .marginnote { grid-column: 2; grid-row: 2; float: none; width: auto; margin: 0; }
+}
+
+@media print {
+  .diff-line { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

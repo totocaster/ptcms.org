@@ -1,27 +1,33 @@
+{{- $first := index (split (strings.TrimPrefix "/" .RelPermalink) "/") 0 -}}
+{{- $area := "" -}}
+{{- if in (slice "manifesto") $first }}{{ $area = "manifesto" }}{{ end -}}
+{{- if or (eq $first "formats") (partial "is-format.html" .) }}{{ $area = "formats" }}{{ end -}}
+{{- if eq $first "glossary" }}{{ $area = "glossary" }}{{ end -}}
+{{- if eq $first "about" }}{{ $area = "about" }}{{ end -}}
 <header class="site-header">
-  <div class="site-identity">
-    <a class="site-logo" href="/" aria-label="{{ .Site.Title }}">
-      <img
-        src="{{ "img/pcstar_logo.svg" | relURL }}"
-        width="376"
-        height="67"
-        alt="{{ .Site.Title }}"
-        decoding="async"
-      />
-    </a>
-    {{ with .Site.Params.tagline }}
-    <p class="site-tagline">{{ . }}</p>
-    {{ end }}
+  <div class="wrap">
+    <a class="wordmark" href="{{ "/" | relURL }}" aria-label="Plaintext Commons, home">Plaintext Commons{{ partial "asterisk.html" }}</a>
+    <nav class="site-nav" aria-label="Primary">
+      <ul>
+        <li><a href="{{ "/manifesto/" | relURL }}"{{ if eq $area "manifesto" }} aria-current="true"{{ end }}>Manifesto</a></li>
+        <li><a href="{{ "/formats/" | relURL }}"{{ if eq $area "formats" }} aria-current="true"{{ end }}>Formats</a></li>
+        <li><a href="{{ "/glossary/" | relURL }}"{{ if eq $area "glossary" }} aria-current="true"{{ end }}>Glossary</a></li>
+        <li><a href="{{ "/about/" | relURL }}"{{ if eq $area "about" }} aria-current="true"{{ end }}>About</a></li>
+      </ul>
+    </nav>
+    <div class="header-tools">
+      <form class="search" role="search" action="{{ "/" | relURL }}" data-index="{{ "search.json" | relURL }}">
+        <label for="site-search" class="vh">Search the Commons</label>
+        <div class="search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C5C5C" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+          <input id="site-search" type="search" placeholder="Search the Commons" autocomplete="off" aria-controls="site-search-results" aria-expanded="false">
+          <kbd>/</kbd>
+        </div>
+        <ul id="site-search-results" class="search-results" role="listbox" hidden></ul>
+      </form>
+      {{- with .OutputFormats.Get "Markdown" }}
+      <a href="{{ .RelPermalink }}">View as <span class="mono" style="font-size: 13px">.md</span></a>
+      {{- end }}
+    </div>
   </div>
-  <nav class="site-nav" aria-label="Primary">
-    <ul>
-      <li><a href="/manifesto/">Manifesto</a></li>
-      <li><a href="/formats/">Formats</a></li>
-      <li><a href="/glossary/">Glossary</a></li>
-      <!--<li><a href="/security/">Security</a></li>
-      <li><a href="/examples/">Examples</a></li>
-      <li><a href="/tools/">Tools</a></li>
-      <li><a href="/resources/">Resources</a></li>-->
-    </ul>
-  </nav>
 </header>

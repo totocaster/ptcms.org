@@ -1,0 +1,53 @@
+{{- $cur := . -}}
+<aside class="tree" aria-label="Documents">
+  <details class="tree-box" open>
+  <summary>Documents and contents</summary>
+  <nav aria-label="Document tree">
+    <h2>Principles</h2>
+    <ul>
+      {{- with site.GetPage "/manifesto" }}
+      {{ partial "tree-item.html" (dict "p" . "cur" $cur "label" "Manifesto" "ver" (partial "version-value.html" .Params.version)) }}
+      {{- end }}
+      {{- with site.GetPage "/glossary" }}
+      {{ partial "tree-item.html" (dict "p" . "cur" $cur "label" "Glossary") }}
+      {{- end }}
+      {{- with site.GetPage "/manifesto/history" }}
+      {{ partial "tree-item.html" (dict "p" . "cur" $cur "label" "History") }}
+      {{- end }}
+    </ul>
+    <h2>Formats</h2>
+    <ul>
+      {{- with site.GetPage "/formats" }}
+      {{ partial "tree-item.html" (dict "p" . "cur" $cur "label" "Registry") }}
+      {{- end }}
+      {{- range site.Sections.ByWeight }}
+      {{- if .Params.shortname }}
+      {{- $fmt := . }}
+      {{- $inside := and $cur.FirstSection (eq $cur.FirstSection $fmt) }}
+      <li>
+        <a href="{{ .RelPermalink }}"{{ if eq $cur $fmt }} aria-current="page"{{ end }}>{{ .Title }} <span class="ver">{{ .Params.latest }}</span></a>
+        {{- if eq $cur $fmt }}{{ with partial "toc.html" $cur }}<ul class="toc">{{ . }}</ul>{{ end }}{{ end }}
+        {{- if $inside }}
+        <ul>
+          {{- range .RegularPages.ByWeight }}
+          {{ partial "tree-item.html" (dict "p" . "cur" $cur "label" (.Params.navTitle | default .LinkTitle) "ver" .Params.version) }}
+          {{- end }}
+        </ul>
+        {{- end }}
+      </li>
+      {{- end }}
+      {{- end }}
+      {{- with site.GetPage "/formats/process" }}
+      {{ partial "tree-item.html" (dict "p" . "cur" $cur "label" "How formats mature") }}
+      {{- end }}
+    </ul>
+    <h2>About</h2>
+    <ul>
+      {{- with site.GetPage "/about" }}
+      {{ partial "tree-item.html" (dict "p" . "cur" $cur "label" "About this site") }}
+      {{- end }}
+      <li><a href="{{ site.Params.repo }}">Source on GitHub</a></li>
+    </ul>
+  </nav>
+  </details>
+</aside>

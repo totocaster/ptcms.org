@@ -1,0 +1,160 @@
+{{ define "head" }}
+{{- $css := resources.Get "css/tasks.scss" | toCSS | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+{{- end }}
+
+{{ define "main" }}
+{{- /* Plaintext Tasks at a glance: the spec's quick example, annotated.
+       Content comes from data/tasks/specimen.yaml; rule statements come from the spec page itself. */ -}}
+{{- /* hugo.Data replaces site.Data from Hugo 0.156; production still builds with 0.139. */ -}}
+{{- $data := dict -}}
+{{- if ge hugo.Version "0.156.0" }}{{ $data = hugo.Data }}{{ else }}{{ $data = site.Data }}{{ end -}}
+{{- $d := index $data "tasks" "specimen" -}}
+{{- $specs := where (where .CurrentSection.RegularPages "Type" "spec") "Params.version" .Params.describes -}}
+{{- if not $specs }}{{ errorf "%s: no spec page with version %q" .File.Path .Params.describes }}{{ end -}}
+{{- $spec := index $specs 0 -}}
+{{- $s := $spec.RelPermalink -}}
+{{- $rules := partial "rules.html" $spec -}}
+{{- $ids := $spec.Fragments.Identifiers -}}
+{{- $atlas := false }}{{ $atlasURL := "#" }}{{ with where .CurrentSection.RegularPages "Params.role" "atlas" }}{{ $atlas = index . 0 }}{{ $atlasURL = $atlas.RelPermalink }}{{ end -}}
+{{- $typeWord := dict "title" "document title" "heading" "section heading" "task" "task" "meta" "metadata" "note" "note" "sep" "archive separator" "blank" "blank line" -}}
+{{- $openIcon := `<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4.6 5.2a2.4 2.4 0 1 1 3.4 2.2c-.7.3-1 .8-1 1.5v.6" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="7" cy="12" r="1.1" fill="currentColor"/></svg>` -}}
+{{- $box := dict
+  "open" ""
+  "done" `<svg viewBox="0 0 14 14"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="#FFFFFF" stroke-width="2.4"/></svg>`
+  "deferred" `<svg viewBox="0 0 10 10"><path d="M3 1.5l4 3.5-4 3.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`
+  "canceled" `<span class="pv-dash"></span>`
+-}}
+{{- /* Every cited rule and section must exist in the spec. */ -}}
+{{- range $d.notes }}{{ $n := . }}
+  {{- range .rules }}{{ if not (where $rules "id" .) }}{{ errorf "specimen.yaml note %v: rule %s is not in %s" $n.num . $spec.File.Path }}{{ end }}{{ end }}
+  {{- range .sections }}{{ if not (in $ids (printf "section-%s" .)) }}{{ errorf "specimen.yaml note %v: section %s is not in %s" $n.num . $spec.File.Path }}{{ end }}{{ end }}
+{{- end }}
+{{- range $d.types }}{{ range .rules }}{{ if not (where $rules "id" .) }}{{ errorf "specimen.yaml types: rule %s is not in %s" . $spec.File.Path }}{{ end }}{{ end }}{{ end -}}
+{{- $note := printf `<p>This page is the overview. The <a href="%s">atlas</a> shows every rule by example, and the <a href="%s">specification</a> is the normative text. All three describe version <span class="mono">%s</span>.</p>` $atlasURL $s $spec.Params.version -}}
+<article class="prose tasks-guide">
+  {{ partial "title-block.html" (dict "p" . "note" ($note | safeHTML)) }}
+
+  <h2 id="file">The file, annotated</h2>
+  <aside class="marginnote"><p>Sixteen notes, one file. Almost all of version <span class="mono">{{ $spec.Params.version }}</span> shows up here. What doesn’t: the file conventions of <a class="rid" href="{{ $s }}#section-4">§4</a> (UTF-8; LF preferred, CRLF accepted) and how apps map the file to their interface (<a class="rid" href="{{ $s }}#section-13">§13</a>).</p></aside>
+  <p>Below is the specification’s own quick example (<a class="rid" href="{{ $s }}#section-6">§6</a>). Each line is coloured by its type: the <span class="t-title tw">document title</span>, <span class="t-heading">section headings</span>, <span class="t-task">tasks</span>, <span class="t-meta">metadata</span>, <span class="t-note">notes</span>, the <span class="t-sep">archive separator</span> and <span class="t-blank">blank lines</span>. The notes around the file state the rules each line depends on. Press a note to light up the lines it governs and read its rules in full below the file.</p>
+
+  <figure class="fullwidth specimen" data-tasks-specimen>
+    <div class="sp-scroll">
+      <ol class="sp-lines" role="list">
+        {{- range $i, $l := $d.lines }}{{ $num := add $i 1 }}
+        <li class="sp-row ty-{{ $l.type }}" data-line="{{ $num }}">
+          <span class="sp-code"><span class="sp-n">{{ $num }}</span><span class="sp-stripe" aria-hidden="true"></span><code class="sp-text">{{ $l.text }}</code><span class="vh">, {{ index $typeWord $l.type }}</span></span>
+          {{- range where $d.notes "row" $num }}
+          <span class="sp-ann sp-ann--{{ lower .side }}">
+            {{- if eq .side "R" }}<span class="sp-dot" aria-hidden="true"></span><span class="sp-lead" aria-hidden="true"></span>{{ end -}}
+            <a class="ann" href="#note-{{ .num }}" data-note="{{ .num }}"><span class="ann-n">{{ .num }}</span> <span class="ann-t">{{ .short | htmlEscape | replaceRE "`([^`]+)`" "<code>$1</code>" | safeHTML }}</span></a>
+            {{- if eq .side "L" }}<span class="sp-lead" aria-hidden="true"></span><span class="sp-dot" aria-hidden="true"></span>{{ end -}}
+          </span>
+          {{- end }}
+        </li>
+        {{- end }}
+      </ol>
+    </div>
+    <figcaption class="cap">Fig. 1. The specification’s quick example, lines 1–{{ len $d.lines }}. Each note sits beside a line it is about; its leader line takes the colour of that line’s type.</figcaption>
+  </figure>
+
+  <div class="sp-panel fullwidth" id="sp-panel">
+    <div class="sp-main">
+    <div class="sp-bar">
+      <p class="sp-hint" data-sp-hint hidden><span class="note-label">How to use it.</span> Press a note beside the file to light up the lines it governs and keep only that note here. Press it again, or Escape, to see all sixteen.</p>
+      <button type="button" class="button" data-sp-clear hidden>Show all notes</button>
+    </div>
+    <p class="vh" role="status" aria-live="polite" data-sp-status></p>
+    <ol class="sp-notes" role="list">
+      {{- range $d.notes }}
+      {{- $row := index $d.lines (sub .row 1) }}
+      <li class="sp-note ty-{{ $row.type }}" id="note-{{ .num }}" data-note="{{ .num }}" data-targets="{{ delimit .targets " " }}">
+        <p class="sp-note-src">{{ range .sections }}<a class="rid" href="{{ $s }}#section-{{ . }}">§{{ . }}</a> {{ end }}{{ .topic }}</p>
+        <h3><span class="sp-note-num">{{ .num }}.</span> {{ .short | htmlEscape | replaceRE "`([^`]+)`" "<code>$1</code>" | safeHTML }}</h3>
+        <p class="sp-note-text">{{ .text | markdownify }}</p>
+        {{- with .open }}
+        <p class="sp-note-open"><span class="verdict verdict--open">{{ $openIcon | safeHTML }}Open</span> {{ . }}</p>
+        {{- end }}
+        {{- with .rules }}
+        <dl class="sp-rules">
+          {{- range . }}{{ with index (where $rules "id" .) 0 }}
+          <div><dt><a class="rid" href="{{ $s }}#{{ .id }}">{{ .id }}</a>{{ with .strength }} <span class="strength strength--{{ . | lower | replaceRE ` ` `-` }}">{{ . }}</span>{{ end }}{{ with .applies }} <span class="applies">· {{ . }}</span>{{ end }}</dt><dd>{{ .text | markdownify }}</dd></div>
+          {{- end }}{{ end }}
+        </dl>
+        {{- end }}
+        <p class="sp-note-foot"><span>{{ cond (eq (len .targets) 1) "Line" "Lines" }} {{ delimit .targets ", " }}</span>{{ with .atlas }}{{ if $atlas }}<a href="{{ $atlas.RelPermalink }}#atlas-{{ . }}">See every case in the atlas</a>{{ end }}{{ end }}</p>
+      </li>
+      {{- end }}
+    </ol>
+    </div>
+    <aside class="sp-aside"><p>Notes on the left and right sit beside the line they are about, so you read the rule where it applies. Each note quotes the rules it rests on, with their IDs.</p></aside>
+  </div>
+
+  <h2 id="line-types">Seven line types</h2>
+  <aside class="marginnote"><p>A note is defined by what it isn’t: it doesn’t begin with checklist, heading, metadata or separator syntax (<a class="rid" href="{{ $s }}#T-13">T-13</a>).</p></aside>
+  <p>A reader goes through the file top to bottom (<a class="rid" href="{{ $s }}#T-36">T-36</a>) and gives each line one of seven types (<a class="rid" href="{{ $s }}#section-7">§7</a>). The shape of a line decides its type; its indentation decides where it belongs.</p>
+  <div class="table-wrap fullwidth">
+    <table class="booktabs line-types">
+      <thead><tr><th scope="col">Type</th><th scope="col">Shape</th><th scope="col">Example</th><th scope="col">Belongs to, or holds</th><th scope="col">Rules</th></tr></thead>
+      <tbody>
+        {{- range $d.types }}{{ $key := .key }}
+        <tr>
+          <th scope="row" class="t-{{ $key }}">{{ .name }}</th>
+          <td>{{ .shape | htmlEscape | replaceRE "`([^`]+)`" "<code>$1</code>" | safeHTML }}</td>
+          <td>{{ with .example }}<code class="lt-ex t-{{ $key }}">{{ . }}</code>{{ else }}<span class="lt-empty">(empty)</span>{{ end }}</td>
+          <td>{{ .holds }}</td>
+          <td class="rids">{{ range .rules }}<a class="rid" href="{{ $s }}#{{ . }}">{{ . }}</a> {{ end }}{{ range .sections }}<a class="rid" href="{{ $s }}#section-{{ . }}">§{{ . }}</a> {{ end }}</td>
+        </tr>
+        {{- end }}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="states">Four states</h2>
+  <aside class="marginnote"><p>Only these four tokens are valid in <span class="mono">{{ $spec.Params.version }}</span> (<a class="rid" href="{{ $s }}#section-7.4">§7.4</a>). The specification doesn’t define moves between states.</p></aside>
+  <p>A <span class="t-task">task</span> is in one of four states, written as a token between the brackets. Three of them have a recommended companion <span class="t-meta">metadata</span> line that records when it happened (<a class="rid" href="{{ $s }}#section-10">§10</a>).</p>
+  <figure class="fullwidth">
+    <ul class="states" role="list">
+      {{- range $d.states }}
+      <li class="state">
+        <code class="state-token t-task">{{ .token }}</code>
+        <span class="state-app pv--{{ .key }}" aria-hidden="true"><span class="pv-box">{{ index $box .key | safeHTML }}</span><span class="pv-title">{{ .sample }}</span></span>
+        <span class="state-name">{{ .name }}</span>
+        <span class="state-meaning">{{ .meaning }}</span>
+        <span class="state-comp">{{ with .companion }}Companion <code class="t-meta">{{ . }}</code>{{ else }}No companion{{ end }}</span>
+        <a class="rid state-ref" href="{{ $s }}#section-{{ .section }}">§{{ .section }}</a>
+      </li>
+      {{- end }}
+    </ul>
+    <figcaption class="cap">Fig. 2. Four states as small multiples: the token, how an app might draw it, its meaning and its companion line.</figcaption>
+  </figure>
+
+  <h2 id="reading-order">Reading order</h2>
+  <aside class="marginnote">
+    <ul class="hang" role="list" aria-label="Parent resolution, drawn">
+      <li><code class="t-task">- [ ] Ship beta</code></li>
+      <li class="hang-child"><code class="t-meta">@due: 2026-04-01</code></li>
+      <li class="hang-child"><code class="t-note">Waiting on icons.</code></li>
+      <li class="hang-child"><code class="t-task">- [ ] Email QA</code> <span class="hang-inh t-meta">inherits <code>@due</code></span></li>
+    </ul>
+    <p class="cap">Fig. 3. Each line hangs from the block one level up.</p>
+  </aside>
+  <p>Read top to bottom and keep the line order (<a class="rid" href="{{ $s }}#T-36">T-36</a>, <a class="rid" href="{{ $s }}#T-37">T-37</a>). A <span class="t-meta">metadata</span> line attaches to the nearest preceding non-nested <span class="t-task">task</span> one level up (<a class="rid" href="{{ $s }}#T-40">T-40</a>). A <span class="t-note">note</span> attaches to the nearest preceding <span class="t-heading">heading</span> or <span class="t-task">task</span> one level up (<a class="rid" href="{{ $s }}#T-41">T-41</a>), and a nested <span class="t-task">task</span> to the nearest preceding task one level up (<a class="rid" href="{{ $s }}#T-42">T-42</a>). Subtasks inherit their ancestor’s effective metadata (<a class="rid" href="{{ $s }}#T-29">T-29</a>), so writers don’t copy it down (<a class="rid" href="{{ $s }}#T-31">T-31</a>).</p>
+  <p>Everything above the <span class="t-sep">archive separator</span> is active; everything below it is the archive (<a class="rid" href="{{ $s }}#section-5">§5</a>), which stays valid Plaintext Tasks (<a class="rid" href="{{ $s }}#T-32">T-32</a>). Readers keep blank lines when practical (<a class="rid" href="{{ $s }}#T-38">T-38</a>) and preserve unknown metadata keys as written (<a class="rid" href="{{ $s }}#T-39">T-39</a>).</p>
+
+  <h2 id="see-also">See also</h2>
+  <aside class="marginnote"><p><span class="note-label">Out of scope.</span> Left for later versions: recurrence, richer date-time values, references between tasks and stricter ID rules (<a class="rid" href="{{ $s }}#section-15">§15</a>).</p></aside>
+  <ul class="page-list">
+    {{- with $atlas }}
+    <li><a href="{{ .RelPermalink }}"><span class="pl-title">{{ .Title }}</span>{{ with .Params.summary }}<span class="pl-sum">{{ . }}</span>{{ end }}</a></li>
+    {{- end }}
+    <li><a href="{{ $s }}"><span class="pl-title">Specification <span class="mono">{{ $spec.Params.version }}</span></span><span class="pl-sum">The normative text. Every rule cited here links to it.</span></a></li>
+    {{- with .OutputFormats.Get "Markdown" }}
+    <li><a href="{{ .RelPermalink }}"><span class="pl-title">This page as Markdown</span><span class="pl-sum">The example file and its sixteen notes, as plain text.</span></a></li>
+    {{- end }}
+  </ul>
+</article>
+{{ end }}
+
+{{ define "scripts" }}<script src="{{ "js/tasks.js" | relURL }}" defer></script>{{ end }}

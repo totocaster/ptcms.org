@@ -1,0 +1,11 @@
+{{- /* Turn page source into the plain Markdown twin:
+       numbered headings instead of {#section-N}, notes in parentheses, margin blocks unwrapped. */ -}}
+{{- $s := . -}}
+{{- $s = replaceRE `(?m)^(#{2,6}) (.+?)[ \t]*\{#section-([0-9.]+)\}[ \t]*$` "$1 $3 $2" $s -}}
+{{- $s = replaceRE `(?m)[ \t]*\{#[A-Za-z0-9_.:-]+\}[ \t]*$` "" $s -}}
+{{- $s = replaceRE `\{\{<\s*note\s*>\}\}` " (" $s -}}
+{{- $s = replaceRE `\{\{<\s*/note\s*>\}\}` ")" $s -}}
+{{- $s = replaceRE `(?m)^\s*\{\{<\s*/?aside\s*>\}\}\s*$` "" $s -}}
+{{- $s = replaceRE `\[\[([A-Z]+-[0-9]+)\]\(#[A-Z]+-[0-9]+\)\]` "[$1]" $s -}}
+{{- $s = replaceRE `\n{3,}` "\n\n" $s -}}
+{{- return $s -}}

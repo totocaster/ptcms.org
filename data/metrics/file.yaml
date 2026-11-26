@@ -1,0 +1,20 @@
+# Chapter 2: a small file with a header, definitions and records.
+# The guide matches each record to the definition it cites by name and version, and draws
+# the book.rating records against their own version's bounds. Same set as the specification's
+# ada/journal examples, so every shared definition is identical to the one there (M-12).
+file: "journal.metrics"
+lines:
+  - '{"format":"plaintext-metrics/0.2.0","set":"ada/journal","by":"Ada"}'
+  - '{"define":"reading.time","v":1,"kind":"quantity","unit":"min","name":"Reading time","combine":"sum","labels":{"medium":["paper","ebook","audio"]}}'
+  - '{"define":"book.rating","v":1,"kind":"score","min":1,"max":5,"name":"Book rating"}'
+  - '{"define":"book.rating","v":2,"kind":"score","min":1,"max":10,"name":"Book rating","about":"How much the book was worth reading, rated when finished."}'
+  - '{"at":"2026-11-26T07:30+01:00","until":"2026-11-26T08:05+01:00","metric":"reading.time","v":1,"value":35,"medium":"paper","note":"Before breakfast","by":"timer-app","ref":"s-2207"}'
+  - '{"date":"2026-03-01","metric":"book.rating","v":1,"value":4}'
+  - '{"date":"2026-07-01","metric":"book.rating","v":2,"value":7}'
+  - '{"date":"2026-07-20","metric":"book.rating","v":2,"value":8}'
+  - '{"date":"2026-03-15","metric":"book.rating","v":1,"value":5}'
+# Notes beside particular lines of the figure, by line number.
+notes:
+  "9": "added in July, for a book finished in March"
+# The metric whose versions the second figure compares.
+versions: "book.rating"

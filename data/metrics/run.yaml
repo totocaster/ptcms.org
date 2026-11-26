@@ -1,0 +1,15 @@
+# Chapter 4: one run, as an event line with its records attached by `of`.
+# The distance is split by a segment label; the heart rate is a separate metric.
+file: "running.metrics"
+lines:
+  - '{"format":"plaintext-metrics/0.2.0","set":"ada/running","by":"Ada"}'
+  - '{"define":"run","v":1,"kind":"event","name":"Run","metrics":["distance","heart_rate.average"],"labels":{"surface":["road","trail","track"]}}'
+  - '{"define":"distance","v":1,"kind":"quantity","unit":"km","name":"Distance","combine":"sum","labels":{"segment":["warmup","main","cooldown"]}}'
+  - '{"define":"heart_rate.average","v":1,"kind":"quantity","unit":"/min","name":"Average heart rate","combine":"mean"}'
+  - '{"at":"2026-11-26T07:30+01:00","until":"2026-11-26T08:22+01:00","event":"run","v":1,"surface":"trail","lat":41.9028,"lon":12.4964,"note":"River loop","id":"run-1126"}'
+  - '{"at":"2026-11-26T07:30+01:00","until":"2026-11-26T07:39+01:00","metric":"distance","v":1,"value":1.5,"segment":"warmup","of":"run-1126"}'
+  - '{"at":"2026-11-26T07:39+01:00","until":"2026-11-26T08:14+01:00","metric":"distance","v":1,"value":7.5,"segment":"main","of":"run-1126"}'
+  - '{"at":"2026-11-26T08:14+01:00","until":"2026-11-26T08:22+01:00","metric":"distance","v":1,"value":1.2,"segment":"cooldown","of":"run-1126"}'
+  - '{"at":"2026-11-26T07:30+01:00","until":"2026-11-26T08:22+01:00","metric":"heart_rate.average","v":1,"value":148,"of":"run-1126"}'
+# Tick marks on the time axis, in minutes after the event starts.
+ticks: [0, 15, 30, 45]

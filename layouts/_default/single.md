@@ -1,10 +1,2 @@
-{{- /* Markdown output for individual pages */ -}}
-{{- if not .Params.hide_title -}}
-# {{ .Title }}
-
-{{- end -}}
-{{- with .Params.summary -}}
-> {{ . }}
-
-{{- end -}}
-{{ .RawContent }}
+{{- partial "md-head.md" . -}}
+{{ partial "md-clean.html" .RawContent }}

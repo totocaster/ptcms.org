@@ -1,0 +1,43 @@
+# Glossary terms, alphabetical. Each id becomes an anchor: /glossary/#corpus
+- id: agent-aware
+  term: "AI / agent-aware"
+  definition: "A tool exposing open, automatable interfaces (e.g., CLI, MCP, stdio, HTTP) for safe scripted/agent use."
+- id: browsing-and-searching
+  term: "browsing & searching"
+  definition: "Exploration and retrieval through indexers, embeddings, and link graphs."
+- id: corpus
+  term: "Corpus"
+  definition: "A folder of open files (your knowledge base/archive) that serves as the system of record."
+- id: format
+  term: "format"
+  definition: "A versioned, human-readable file convention published here, such as [Plaintext Tasks](/tasks/). Each format has a specification with numbered rules, and guides that show the rules by example."
+- id: frontmatter
+  term: "frontmatter"
+  definition: "Lightweight metadata at the top of a Markdown file (e.g., YAML)."
+- id: frozen-version
+  term: "frozen version"
+  definition: "A published version of a specification at its own address, such as `/tasks/v1.0.0/`. Its text never changes; corrections arrive as a new version."
+- id: plaintext-files
+  term: "plaintext files"
+  definition: "Human-readable documents in Markdown or .txt."
+- id: plaintext-metrics
+  term: "Plaintext Metrics"
+  definition: "A plain-text format for numbers recorded over time: one JSON object per line, with versioned definitions carried in the same file. See [Plaintext Metrics](/metrics/) for the current spec."
+- id: plaintext-tasks
+  term: "Plaintext Tasks"
+  definition: "A strict plain-text task format with headings, checklist states, notes, metadata lines, indentation-based subtasks, and an optional archive region. See [Plaintext Tasks](/tasks/) for the current spec and version history."
+- id: previewable-writes
+  term: "previewable writes"
+  definition: "A workflow where tools generate human-auditable change previews before applying writes."
+- id: provenance-trail
+  term: "provenance trail"
+  definition: "A simple history/log explaining why changes were applied, not only what changed."
+- id: rule-id
+  term: "rule ID"
+  definition: "The stable name of one rule in a specification, such as `T-10`. It is never reused, so a citation like “Plaintext Tasks 1.0.0, T-10” always means the same thing."
+- id: sidecar
+  term: "sidecar / metadata file"
+  definition: "A tiny `.json`/`.yaml` file placed next to a `.txt` note when metadata is needed."
+- id: tools
+  term: "tools"
+  definition: "Editors, CLIs, indexers, and agents that operate on the corpus without owning it."

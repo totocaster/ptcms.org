@@ -1,0 +1,36 @@
+# Chapter 6: the builder. Presets are definitions to start from; examples fill the whole form,
+# from a preset or from a `definition` line of their own.
+# Definitions shared with the specification's ada/journal examples are copied from it exactly (M-12).
+set: "ada/journal"
+presets:
+  - { key: "reading-time", label: "reading.time v1 · quantity, min, with a label", line: '{"define":"reading.time","v":1,"kind":"quantity","unit":"min","name":"Reading time","combine":"sum","labels":{"medium":["paper","ebook","audio"]}}' }
+  - { key: "walk-distance", label: "walk.distance v1 · quantity, km or m", line: '{"define":"walk.distance","v":1,"kind":"quantity","unit":["km","m"],"name":"Walking distance","combine":"sum"}' }
+  - { key: "room-temperature", label: "room.temperature v1 · quantity, Cel", line: '{"define":"room.temperature","v":1,"kind":"quantity","unit":"Cel","name":"Room temperature","combine":"mean"}' }
+  - { key: "reading-pages", label: "reading.pages v1 · count", line: '{"define":"reading.pages","v":1,"kind":"count","name":"Pages read"}' }
+  - { key: "reading-done", label: "reading.done v1 · flag", line: '{"define":"reading.done","v":1,"kind":"flag","about":"1 if any reading happened that day."}' }
+  - { key: "book-rating-1", label: "book.rating v1 · score, 1 to 5", line: '{"define":"book.rating","v":1,"kind":"score","min":1,"max":5,"name":"Book rating"}' }
+  - { key: "book-rating-2", label: "book.rating v2 · score, 1 to 10", line: '{"define":"book.rating","v":2,"kind":"score","min":1,"max":10,"name":"Book rating","about":"How much the book was worth reading, rated when finished."}' }
+# `expect` is what the checker reports for each example; the node test confirms it.
+examples:
+  - { key: "session", label: "A reading session", preset: "reading-time", expect: "valid", record: '{"at":"2026-11-26T21:40+01:00","until":"2026-11-26T22:10+01:00","metric":"reading.time","v":1,"value":30,"medium":"audio","note":"Two chapters before bed"}' }
+  - { key: "out-of-range", label: "A score above its maximum", preset: "book-rating-1", expect: "out_of_range", record: '{"date":"2026-07-01","metric":"book.rating","v":1,"value":8}' }
+  - { key: "two-units", label: "Two units, none stated", preset: "walk-distance", expect: "unit_mismatch", record: '{"at":"2026-11-26T13:00+01:00","metric":"walk.distance","v":1,"value":800}' }
+  - { key: "backwards", label: "A span that ends early", preset: "reading-time", expect: "bad_span", record: '{"at":"2026-11-26T08:05+01:00","until":"2026-11-26T07:30+01:00","metric":"reading.time","v":1,"value":35,"medium":"paper"}' }
+  - { key: "wrong-version", label: "A version not defined", preset: "book-rating-1", expect: "undefined", record: '{"date":"2026-07-01","metric":"book.rating","v":2,"value":7}' }
+  - { key: "undeclared", label: "An undeclared label", preset: "room-temperature", expect: "undeclared_label", record: '{"at":"2026-11-26T08:10+01:00","metric":"room.temperature","v":1,"value":19.5,"room":"study"}' }
+  - { key: "quoted", label: "A number in quotes", preset: "reading-pages", expect: "bad_value", record: '{"date":"2026-11-26","metric":"reading.pages","v":1,"value":"42"}' }
+  - { key: "no-time", label: "No time at all", preset: "reading-done", expect: "missing_field", record: '{"metric":"reading.done","v":1,"value":1}' }
+  - { key: "no-combine", label: "A quantity with no combine", definition: '{"define":"distance","v":1,"kind":"quantity","unit":"km"}', expect: "missing_field", record: '{"at":"2026-11-26T07:30+01:00","metric":"distance","v":1,"value":10.2}' }
+# The example the page opens with, and the checks the builder shows for it.
+# Hugo renders these rows so the result is there without JavaScript; the node test keeps them in step with metrics.js.
+default: "session"
+sampleRows:
+  - { status: "ok", part: "Definition", check: "missing_field", rules: ["M-24", "M-33", "M-78"], detail: "define, v and kind are present, with the unit and combine a quantity needs." }
+  - { status: "ok", part: "Definition", check: "bad_value", rules: ["M-25", "M-26", "M-27", "M-35", "M-37", "M-40"], detail: "The name, version, kind, unit, combine and labels are well formed." }
+  - { status: "ok", part: "Record", check: "missing_field", rules: ["M-42"], detail: "metric, v, value and at are present." }
+  - { status: "ok", part: "Record", check: "bad_value", rules: ["M-43", "M-45", "M-54"], detail: "value is the number 30; at has a date, a time and an offset; medium takes an allowed value." }
+  - { status: "ok", part: "Record", check: "undefined", rules: ["M-10"], detail: "It cites reading.time v1, which the definition above provides." }
+  - { status: "ok", part: "Record", check: "out_of_range", rules: ["M-44"], detail: "A quantity is any number. It has no bounds." }
+  - { status: "ok", part: "Record", check: "unit_mismatch", rules: ["M-51"], detail: "The definition states one unit, min, so the record need not." }
+  - { status: "ok", part: "Record", check: "bad_span", rules: ["M-48"], detail: "until is 30 minutes after at." }
+  - { status: "ok", part: "Record", check: "undeclared_label", rules: ["M-53"], detail: "medium is a label the definition declares." }

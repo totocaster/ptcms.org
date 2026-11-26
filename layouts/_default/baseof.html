@@ -1,17 +1,25 @@
 <!DOCTYPE html>
-<html lang="{{ .Site.Language.Lang }}">
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     {{ partial "head.html" . }}
+    {{ block "head" . }}{{ end }}
   </head>
   <body>
-    <div class="page-shell">
-      {{ partial "site-header.html" . }}
-      <main id="main" class="site-main">
+    <a class="skip" href="#main">Skip to content</a>
+    {{ partial "site-header.html" . }}
+    {{ partial "crumbs.html" . }}
+    {{ block "body" . }}
+    <div class="layout">
+      {{ partial "tree.html" . }}
+      <main id="main" class="doc">
         {{ block "main" . }}{{ end }}
       </main>
-      {{ partial "site-footer.html" . }}
     </div>
+    {{ end }}
+    {{ partial "site-footer.html" . }}
+    <script src="{{ "js/search.js" | relURL }}" defer></script>
+    {{ block "scripts" . }}{{ end }}
   </body>
 </html>

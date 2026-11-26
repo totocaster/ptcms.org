@@ -1,3 +1,8 @@
 {{ define "main" }}
-  {{ partial "proxy-document.html" (dict "page" . "showVersions" true) }}
+{{- $source := site.GetPage (.Params.proxy_source | default "/manifesto") -}}
+{{- $note := printf "<p><span class=\"note-label\">Frozen copy of version %s.</span> This text never changes. The current manifesto lives at <a href=\"%s\">%s</a>.</p>" (partial "version-value.html" .Params.version) $source.RelPermalink $source.RelPermalink -}}
+<article class="prose">
+  {{ partial "title-block.html" (dict "p" . "title" (printf "Manifesto %s" (partial "version-value.html" .Params.version)) "subtitle" $source.Params.description "note" ($note | safeHTML)) }}
+  {{ $source.Content }}
+</article>
 {{ end }}

@@ -1,0 +1,3 @@
+{"date":"2026-11-26","metric":"reading.pages","v":1,"value":42}
+{"define":"reading.pages","v":1,"kind":"count","name":"Pages read"}
+{"format":"plaintext-metrics/0.2.0","set":"example/any-order"}

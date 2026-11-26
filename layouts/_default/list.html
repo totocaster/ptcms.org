@@ -1,19 +1,13 @@
 {{ define "main" }}
-<section class="content">
+<article class="prose">
+  {{ partial "title-block.html" (dict "p" .) }}
   {{ .Content }}
-  {{ if gt (len .Pages) 0 }}
+  {{- with .Pages }}
   <ul class="page-list">
-    {{ range .Pages }}
-    <li>
-      <a href="{{ .RelPermalink }}">
-        <span class="page-title">{{ .Title }}</span>
-        {{ with .Params.summary }}
-        <span class="page-summary">{{ . }}</span>
-        {{ end }}
-      </a>
-    </li>
-    {{ end }}
+    {{- range . }}
+    <li><a href="{{ .RelPermalink }}"><span class="pl-title">{{ .Title }}</span>{{ with .Params.summary }}<span class="pl-sum">{{ . }}</span>{{ end }}</a></li>
+    {{- end }}
   </ul>
-  {{ end }}
-</section>
+  {{- end }}
+</article>
 {{ end }}

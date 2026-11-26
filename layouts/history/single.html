@@ -1,0 +1,27 @@
+{{ define "main" }}
+{{- $fmt := .Parent -}}
+{{- $versions := (where $fmt.RegularPages "Type" "spec").ByDate.Reverse -}}
+<article class="prose">
+  {{ partial "title-block.html" (dict "p" . "note" ("<p>A changelog records why, not only what: the manifesto's own rule, applied to the formats.</p>" | safeHTML)) }}
+  {{ .Content }}
+
+  <h2 id="versions">Versions</h2>
+  <div class="table-wrap">
+    <table class="booktabs">
+      <thead><tr><th scope="col">Version</th><th scope="col">Status</th><th scope="col">Published</th><th scope="col">Address</th></tr></thead>
+      <tbody>
+        {{- range $versions }}
+        <tr><td><a class="mono" href="{{ .RelPermalink }}">{{ .Params.version }}</a></td><td>{{ partial "status.html" .Params.status }}</td><td>{{ .Date.Format "2006-01-02" }}</td><td class="mono" style="font-size: 14px">{{ .RelPermalink }}</td></tr>
+        {{- end }}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="changes">Changes</h2>
+  {{- range .Params.changes }}
+  <aside class="marginnote"><p><span class="note-label">Why.</span> {{ with .why }}{{ . | markdownify }}{{ else }}<span style="color: #5C5C5C">Reason not yet recorded.</span>{{ end }}</p></aside>
+  <h3 id="v{{ .version }}"><span class="mono" style="font-weight: 400">{{ .version }}</span> · {{ time.Format "2006-01-02" .date }}</h3>
+  <p>{{ .summary | markdownify }}</p>
+  {{- end }}
+</article>
+{{ end }}

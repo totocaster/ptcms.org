@@ -1,0 +1,274 @@
+# Plaintext Tasks at a glance: the annotated quick example.
+# Read by layouts/tasks-guide/single.html and single.md.
+# Line types: title, heading, task, meta, note, sep, blank.
+# Rule IDs must exist in content/tasks/v1.0.0.md; the templates fail the build otherwise.
+
+lines:
+  - { text: "# Workboard", type: title }
+  - { text: "", type: blank }
+  - { text: "## Work", type: heading }
+  - { text: "", type: blank }
+  - { text: "Shared notes for current work items.", type: note }
+  - { text: "", type: blank }
+  - { text: "- [ ] Ship beta", type: task }
+  - { text: "  @id: 6a7a5b2e", type: meta }
+  - { text: "  @created: 2026-03-25", type: meta }
+  - { text: "  @due: 2026-04-01", type: meta }
+  - { text: "  Waiting on icons from design.", type: note }
+  - { text: "  - [ ] Email QA", type: task }
+  - { text: "  - [ ] Prepare release notes", type: task }
+  - { text: "", type: blank }
+  - { text: "- [>] Review onboarding copy", type: task }
+  - { text: "  @defer-until: 2026-03-28", type: meta }
+  - { text: "", type: blank }
+  - { text: "## Personal", type: heading }
+  - { text: "", type: blank }
+  - { text: "- [ ] Book dentist", type: task }
+  - { text: "  @due: 2026-03-31", type: meta }
+  - { text: "", type: blank }
+  - { text: "---", type: sep }
+  - { text: "", type: blank }
+  - { text: "## Archive", type: heading }
+  - { text: "", type: blank }
+  - { text: "- [x] File taxes", type: task }
+  - { text: "  @done: 2026-03-20", type: meta }
+  - { text: "", type: blank }
+  - { text: "- [-] Cancel old ISP contract", type: task }
+  - { text: "  @canceled: 2026-03-18", type: meta }
+
+# Each note sits beside one line (row, 1-based) on the left (L) or right (R) of the file
+# and lights up its target lines. `atlas` names the atlas row it links to, if any.
+# `open` marks the one known open question and renders with the neutral open verdict.
+notes:
+  - num: 1
+    row: 1
+    side: L
+    short: "One `#` names the whole list"
+    topic: "Document title line"
+    text: "A document title line is one `#`, one space, then the title. It is optional, should appear at most once, and should come before any sections, tasks or notes in the active region. It names the entire list, not a part of it."
+    rules: [T-1, T-2, T-3, T-4]
+    sections: ["7.2"]
+    targets: [1]
+    atlas: title-place
+
+  - num: 2
+    row: 3
+    side: R
+    short: "`##` to `######` start a section"
+    topic: "Section heading line"
+    text: "A section heading is two to six `#`, one space, then the text. A section holds notes and tasks until the next heading of the same or higher level, or until the archive separator. Writers put exactly one space after the `#`."
+    rules: [T-45]
+    sections: ["7.3"]
+    targets: [3, 18, 25]
+    atlas: heading-shape
+
+  - num: 3
+    row: 5
+    side: L
+    short: "A note at root, under a heading"
+    topic: "Note line"
+    text: "Notes attach to the nearest heading or task one level up, and must be indented deeper than their parent. This line in the spec’s own example sits at root under `## Work`, so the example and the rule disagree."
+    open: "Either a note may sit at root under its heading, or the example should indent this line. Version 1.0.0 doesn’t say which."
+    rules: [T-14, T-25, T-41]
+    sections: ["6", "7.6"]
+    targets: [5]
+    atlas: open
+
+  - num: 4
+    row: 7
+    side: R
+    short: "Only `-` is a task bullet"
+    topic: "Task line"
+    text: "A task line is `- [ ]`, one space, then the title. Only `-` is valid as the bullet in 1.0.0, the checkbox token must be spaced exactly as shown, and the title is plain text."
+    rules: [T-5, T-6, T-7]
+    sections: ["7.4"]
+    targets: [7, 15, 20, 27, 30]
+    atlas: task-bullet
+
+  - num: 5
+    row: 8
+    side: L
+    short: "`@id` is a stable opaque string"
+    topic: "Metadata line"
+    text: "`@id` is a reserved key, and its recommended value is a stable, opaque identifier string. Writers should not hide app-only identifiers anywhere but in explicit metadata lines."
+    rules: [T-53]
+    sections: ["7.5"]
+    targets: [8]
+
+  - num: 6
+    row: 9
+    side: R
+    short: "Metadata sits deeper than its task"
+    topic: "Metadata line"
+    text: "A metadata line is `@key: value`, indented deeper than its task, and only non-nested tasks have them. Keys are case-insensitive, values are plain text, and unknown keys are valid and must be preserved."
+    rules: [T-8, T-9, T-10, T-11, T-12]
+    sections: ["7.5"]
+    targets: [8, 9, 10, 16, 21, 28, 31]
+    atlas: meta-placement
+
+  - num: 7
+    row: 10
+    side: L
+    short: "Dates as `YYYY-MM-DD`, recommended"
+    topic: "Metadata line"
+    text: "The recommended form for `@created`, `@date`, `@due`, `@done`, `@defer-until` and `@canceled` is `YYYY-MM-DD`; for `@priority` it is `1`, `2` or `3`. Values stay plain text. `@date` marks when a task becomes relevant, not a deadline."
+    rules: [T-9]
+    sections: ["7.5"]
+    targets: [9, 10, 16, 21, 28, 31]
+    atlas: meta-value
+
+  - num: 8
+    row: 11
+    side: R
+    short: "A note belongs to the task above"
+    topic: "Note line"
+    text: "A note is plain text attached to the nearest heading or task at the immediately shallower level. It doesn’t begin with checklist, heading, metadata or separator syntax, and consecutive note lines stay distinct lines."
+    rules: [T-13, T-14, T-15, T-25, T-41]
+    sections: ["7.6"]
+    targets: [11]
+    atlas: note-indent
+
+  - num: 9
+    row: 12
+    side: L
+    short: "Two spaces per level"
+    topic: "Indentation and hierarchy"
+    text: "Hierarchy is indentation. One level is two spaces, and in canonical form a child sits exactly one level deeper than its parent. Canonical writers must not write tabs; readers may accept tabs or other widths on import."
+    rules: [T-19, T-20, T-21, T-22, T-23]
+    sections: ["8"]
+    targets: [12, 13]
+    atlas: indent-width
+
+  - num: 10
+    row: 13
+    side: R
+    short: "Subtasks inherit the parent’s `@due`"
+    topic: "Metadata inheritance"
+    text: "Nested tasks are subtasks. They inherit effective metadata from the nearest ancestor task and don’t override it: Email QA is due `2026-04-01` because Ship beta is. Writers should not copy inherited metadata onto subtasks."
+    rules: [T-24, T-26, T-29, T-30, T-31]
+    sections: ["9"]
+    targets: [10, 12, 13]
+    atlas: meta-nested
+
+  - num: 11
+    row: 15
+    side: L
+    short: "`[>]` deferred, with `@defer-until`"
+    topic: "State semantics"
+    text: "`[>]` means the task is intentionally postponed but still relevant. The recommended companion metadata is `@defer-until: YYYY-MM-DD`."
+    rules: []
+    sections: ["10.3"]
+    targets: [15, 16]
+    atlas: task-state
+
+  - num: 12
+    row: 17
+    side: R
+    short: "Blank lines are for readability"
+    topic: "Blank lines"
+    text: "Blank lines contain no visible characters and may appear between blocks for readability. Readers preserve them when practical."
+    rules: [T-38]
+    sections: ["7.1"]
+    targets: [2, 4, 6, 14, 17, 19, 22, 24, 26, 29]
+
+  - num: 13
+    row: 23
+    side: R
+    short: "`---` at root starts the archive"
+    topic: "Archive separator line"
+    text: "The archive separator is exactly `---`, at root indentation, at most once. Everything above it is active; everything below it is the archive. With no separator, the whole document is active."
+    rules: [T-16, T-17, T-18]
+    sections: ["5", "7.7"]
+    targets: [23]
+    atlas: sep-placement
+
+  - num: 14
+    row: 25
+    side: L
+    short: "Archived items stay valid"
+    topic: "Archive semantics"
+    text: "Archived content remains valid Plaintext Tasks and may contain headings, notes and tasks. Apps should keep structure, metadata, notes and subtasks when they move items there, and writers should not silently move tasks across the separator."
+    rules: [T-32, T-33, T-35, T-51]
+    sections: ["11"]
+    targets: [25, 27, 28, 30, 31]
+
+  - num: 15
+    row: 27
+    side: R
+    short: "`[x]` done, with `@done`"
+    topic: "State semantics"
+    text: "`[x]` means the task is completed, and the recommended companion is `@done: YYYY-MM-DD`. Apps may add `@done` when archiving, but should not require it for parsing."
+    rules: [T-34]
+    sections: ["10.2"]
+    targets: [27, 28]
+    atlas: task-state
+
+  - num: 16
+    row: 30
+    side: L
+    short: "`[-]` canceled, with `@canceled`"
+    topic: "State semantics"
+    text: "`[-]` means the task will not be completed. The recommended companion metadata is `@canceled: YYYY-MM-DD`."
+    rules: []
+    sections: ["10.4"]
+    targets: [30, 31]
+    atlas: task-state
+
+# Seven line types (§7), in the order of the table.
+types:
+  - key: title
+    name: "Document title"
+    shape: "One `#`, a space, the title"
+    example: "# Workboard"
+    holds: "Names the whole list. Optional, at most once, before any content."
+    rules: [T-1, T-2, T-3, T-4]
+    sections: ["7.2"]
+  - key: heading
+    name: "Section heading"
+    shape: "Two to six `#`, a space, the text"
+    example: "## Work"
+    holds: "Notes and tasks, until the next heading of the same or higher level, or the separator."
+    rules: []
+    sections: ["7.3"]
+  - key: task
+    name: "Task"
+    shape: "`- [ ]`, a space, the title"
+    example: "- [ ] Ship beta"
+    holds: "Metadata if it isn’t nested, notes, and subtasks."
+    rules: [T-5, T-6, T-7, T-24]
+    sections: ["7.4"]
+  - key: meta
+    name: "Metadata"
+    shape: "`@key: value`, indented"
+    example: "  @due: 2026-04-01"
+    holds: "Belongs to the nearest preceding non-nested task, one level up."
+    rules: [T-10, T-11, T-40]
+    sections: ["7.5"]
+  - key: note
+    name: "Note"
+    shape: "Plain text, indented"
+    example: "  Waiting on icons from design."
+    holds: "Belongs to the nearest preceding heading or task, one level up."
+    rules: [T-13, T-14, T-41]
+    sections: ["7.6"]
+  - key: sep
+    name: "Archive separator"
+    shape: "Exactly `---`, at root"
+    example: "---"
+    holds: "Splits active content from the archive. At most once."
+    rules: [T-16, T-17, T-18]
+    sections: ["7.7"]
+  - key: blank
+    name: "Blank"
+    shape: "No visible characters"
+    example: ""
+    holds: "Space between blocks, kept when practical."
+    rules: [T-38]
+    sections: ["7.1"]
+
+# Four states (§7.4, §10), drawn as small multiples.
+states:
+  - { token: "[ ]", key: open, name: "Open", meaning: "Active and not completed.", companion: "", sample: "Ship beta", section: "10.1" }
+  - { token: "[x]", key: done, name: "Done", meaning: "Completed.", companion: "@done: YYYY-MM-DD", sample: "File taxes", section: "10.2" }
+  - { token: "[>]", key: deferred, name: "Deferred", meaning: "Intentionally postponed, still relevant.", companion: "@defer-until: YYYY-MM-DD", sample: "Review onboarding copy", section: "10.3" }
+  - { token: "[-]", key: canceled, name: "Canceled", meaning: "Will not be completed.", companion: "@canceled: YYYY-MM-DD", sample: "Cancel old ISP contract", section: "10.4" }

@@ -1,0 +1,20 @@
+{{- /* "On this page" items for the document tree: <li> elements only.
+       Template-built pages list their sections in front matter (toc: [{id, n, title}]);
+       Markdown pages use their own level-2 headings. */ -}}
+{{- $out := "" -}}
+{{- with .Params.toc -}}
+  {{- range . -}}
+    {{- $out = printf "%s<li><a href=\"#%s\">%s%s</a></li>" $out .id (cond (isset . "n") (printf "<span class=\"sec\">§%v</span> " .n) "") .title -}}
+  {{- end -}}
+{{- else -}}
+  {{- range .Fragments.Headings -}}
+    {{- range (cond (eq .Level 2) (slice .) .Headings) -}}
+      {{- if eq .Level 2 -}}
+        {{- $n := "" -}}
+        {{- with findRESubmatch `^section-([0-9.]+)$` .ID 1 }}{{ $n = printf "<span class=\"sec\">§%s</span> " (index (index . 0) 1) }}{{ end -}}
+        {{- $out = printf "%s<li><a href=\"#%s\">%s%s</a></li>" $out .ID $n (.Title | plainify) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return ($out | safeHTML) -}}

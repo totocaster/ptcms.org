@@ -1,0 +1,4 @@
+{"format":"plaintext-metrics/0.2.0","set":"example/two-kinds"}
+{"define":"run","v":1,"kind":"event"}
+{"define":"distance","v":1,"kind":"quantity","unit":"km","combine":"sum"}
+{"at":"2026-11-26T07:30+01:00","event":"run","metric":"distance","v":1,"value":10.2,"id":"run-1126"}

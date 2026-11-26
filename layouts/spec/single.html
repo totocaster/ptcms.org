@@ -1,0 +1,55 @@
+{{ define "main" }}
+{{- $fmt := .Parent -}}
+{{- $rules := partial "rules.html" . -}}
+{{- $md := .OutputFormats.Get "Markdown" -}}
+{{- $json := .OutputFormats.Get "Rules" -}}
+{{- $note := "" -}}
+{{- $note = printf "%s<p><span class=\"note-label\">This version is frozen.</span> Its text never changes; corrections arrive as a new version.</p>" $note -}}
+{{- with $md }}{{ $note = printf "%s<p>Markdown: <a class=\"mono\" style=\"font-size:13px\" href=\"%s\">%sindex.md</a></p>" $note .RelPermalink $.RelPermalink }}{{ end -}}
+{{- with $json }}{{ $note = printf "%s<p>Rules as JSON: <a class=\"mono\" style=\"font-size:13px\" href=\"%s\">rules.json</a></p>" $note .RelPermalink }}{{ end -}}
+{{- with .Params.files }}{{ range . }}{{ $note = printf "%s<p>%s: <a class=\"mono\" style=\"font-size:13px\" href=\"%s\">%s</a></p>" $note .label .url (path.Base .url) }}{{ end }}{{ end -}}
+{{- $note = printf "%s<p>Cite: %s %s, <span class=\"mono\" style=\"font-size:13px\">%s</span></p>" $note $fmt.Title (partial "version-value.html" .Params.version) (strings.TrimPrefix "https://" .Permalink) -}}
+<article class="prose">
+  {{ partial "title-block.html" (dict "p" . "note" ($note | safeHTML)) }}
+
+  {{- with $rules }}
+  <section aria-labelledby="rules-at-a-glance">
+    <h2 id="rules-at-a-glance">Rules at a glance</h2>
+    <p>Every rule in this version, by section. Each has a stable ID: cite it as <span class="mono" style="font-size: 14px">{{ $.Parent.Title }} {{ $.Params.version }}, {{ (index . 0).id }}</span> and link it as <a class="mono" style="font-size: 14px" href="#{{ (index . 0).id }}">#{{ (index . 0).id }}</a>. Strength is shown only where the text itself says must, should or may.</p>
+    <div class="table-wrap fullwidth">
+      <table class="booktabs">
+        <thead><tr><th scope="col" style="width: 72px">Rule</th><th scope="col">Statement</th><th scope="col" style="width: 110px">Strength</th><th scope="col" style="width: 90px">Applies to</th></tr></thead>
+        <tbody>
+          {{- $last := "" }}
+          {{- range . }}
+          {{- if ne .section $last }}{{ $last = .section }}
+          <tr class="group"><td colspan="4"><a href="#section-{{ .section }}" style="color: inherit"><span class="mono">§{{ .section }}</span> {{ .sectionTitle }}</a></td></tr>
+          {{- end }}
+          <tr>
+            <td><a class="mono" style="font-size: 13.5px" href="#{{ .id }}">{{ .id }}</a></td>
+            <td>{{ .text | markdownify }}{{ if in ($.Params.open_rules | default slice) .id }} <a class="open-flag" href="#section-{{ $.Params.open_section | default "12" }}">open question</a>{{ end }}</td>
+            <td>{{ with .strength }}<span class="strength strength--{{ . | lower | replaceRE ` ` `-` }}">{{ . }}</span>{{ end }}</td>
+            <td style="color: #5C5C5C; font-size: 14px">{{ .applies }}</td>
+          </tr>
+          {{- end }}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {{- end }}
+
+  {{ .Content }}
+
+  {{- $guides := where $fmt.RegularPages "Params.role" "in" (slice "guide" "atlas" "companion" "history") }}
+  {{- with $guides }}
+  <section aria-labelledby="see-also">
+    <h2 id="see-also">See also</h2>
+    <ul class="page-list">
+      {{- range .ByWeight }}
+      <li><a href="{{ .RelPermalink }}"><span class="pl-title">{{ .Params.navTitle | default .Title }}</span>{{ with .Params.summary }}<span class="pl-sum">{{ . }}</span>{{ end }}</a></li>
+      {{- end }}
+    </ul>
+  </section>
+  {{- end }}
+</article>
+{{ end }}

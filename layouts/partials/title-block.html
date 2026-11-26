@@ -1,0 +1,19 @@
+{{- /* (dict "p" page "note" html-for-margin) */ -}}
+{{- $p := .p -}}
+<header class="title-block">
+  {{- with .note }}<div class="title-note">{{ . }}</div>{{ end }}
+  {{- with $p.Params.eyebrow }}<p class="eyebrow">{{ . | markdownify }}</p>{{ end }}
+  <h1>{{ .title | default ($p.Params.heading | default $p.Title) }}</h1>
+  {{- with .subtitle | default ($p.Params.subtitle | default $p.Params.summary) }}
+  <p class="subtitle">{{ . | markdownify }}</p>
+  {{- end }}
+  {{- if or $p.Params.status $p.Params.version $p.Params.extension }}
+  <div class="meta">
+    {{- with $p.Params.status }}<span><span class="k">Status</span>{{ partial "status.html" . }}</span>{{ end }}
+    {{- with $p.Params.latest }}<span><span class="k">Latest</span><a class="v-mono" href="{{ $p.RelPermalink }}v{{ . }}/">{{ . }}</a></span>{{ end }}
+    {{- with $p.Params.version }}<span><span class="k">Version</span><span class="v-mono">{{ partial "version-value.html" . }}</span></span>{{ end }}
+    {{- if and $p.Params.version (not $p.Date.IsZero) }}<span><span class="k">Published</span>{{ $p.Date.Format "2006-01-02" }}</span>{{ end }}
+    {{- with $p.Params.extension }}<span><span class="k">Extension</span><span class="v-mono">{{ . }}</span></span>{{ end }}
+  </div>
+  {{- end }}
+</header>

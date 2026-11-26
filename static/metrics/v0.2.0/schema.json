@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plaintextcommons.org/metrics/v0.2.0/schema.json",
+  "title": "Plaintext Metrics 0.2.0: one line",
+  "description": "Validates a single line of a .metrics file. It cannot express rules that span lines: that a cited definition exists, that a value fits its definition, that an id is unique, or that a label is declared. Extra fields are allowed on records and events because declared labels are written as plain fields.",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/$defs/header" },
+    { "$ref": "#/$defs/definition" },
+    { "$ref": "#/$defs/record" },
+    { "$ref": "#/$defs/event" }
+  ],
+  "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+    },
+    "moment": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "period": {
+      "type": "string",
+      "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$"
+    },
+    "version": { "type": "integer", "minimum": 1 },
+    "header": {
+      "type": "object",
+      "required": ["format", "set"],
+      "not": { "anyOf": [{ "required": ["define"] }, { "required": ["metric"] }, { "required": ["event"] }] },
+      "properties": {
+        "format": { "type": "string", "pattern": "^plaintext-metrics/(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$" },
+        "set": { "type": "string", "minLength": 1 },
+        "by": { "type": "string" }
+      }
+    },
+    "definition": {
+      "type": "object",
+      "required": ["define", "v", "kind"],
+      "not": { "anyOf": [{ "required": ["format"] }, { "required": ["metric"] }, { "required": ["event"] }] },
+      "properties": {
+        "define": { "$ref": "#/$defs/name" },
+        "v": { "$ref": "#/$defs/version" },
+        "kind": { "enum": ["quantity", "count", "score", "flag", "event"] },
+        "unit": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+          ]
+        },
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "name": { "type": "string" },
+        "about": { "type": "string" },
+        "combine": { "enum": ["sum", "mean", "min", "max", "last"] },
+        "labels": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+          "additionalProperties": {
+            "oneOf": [
+              { "enum": ["text", "number"] },
+              { "type": "array", "minItems": 1, "items": { "type": ["string", "number"] } }
+            ]
+          }
+        },
+        "levels": { "type": "object", "additionalProperties": { "type": "string" } },
+        "metrics": { "type": "array", "items": { "$ref": "#/$defs/name" } },
+        "parts": { "type": "array", "items": { "$ref": "#/$defs/name" } },
+        "was": { "type": "array", "items": { "$ref": "#/$defs/name" } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "quantity" } }, "required": ["kind"] },
+          "then": { "required": ["unit", "combine"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "score" } }, "required": ["kind"] },
+          "then": { "required": ["min", "max"] }
+        }
+      ]
+    },
+    "record": {
+      "type": "object",
+      "required": ["metric", "v", "value"],
+      "not": { "anyOf": [{ "required": ["format"] }, { "required": ["define"] }, { "required": ["event"] }] },
+      "anyOf": [{ "required": ["at"] }, { "required": ["date"] }],
+      "dependentRequired": { "until": ["at"], "lat": ["lon"], "lon": ["lat"] },
+      "properties": {
+        "metric": { "$ref": "#/$defs/name" },
+        "v": { "$ref": "#/$defs/version" },
+        "value": { "type": "number" },
+        "at": { "$ref": "#/$defs/moment" },
+        "date": { "$ref": "#/$defs/period" },
+        "until": { "$ref": "#/$defs/moment" },
+        "unit": { "type": "string", "minLength": 1 },
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+        "note": { "type": "string" },
+        "of": { "type": "string", "minLength": 1 },
+        "by": { "type": "string" },
+        "ref": { "type": "string" },
+        "id": { "type": "string", "minLength": 1 },
+        "meta": { "type": "object" }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": ["event", "v", "id"],
+      "not": { "anyOf": [{ "required": ["format"] }, { "required": ["define"] }, { "required": ["metric"] }, { "required": ["value"] }] },
+      "anyOf": [{ "required": ["at"] }, { "required": ["date"] }],
+      "dependentRequired": { "until": ["at"], "lat": ["lon"], "lon": ["lat"] },
+      "properties": {
+        "event": { "$ref": "#/$defs/name" },
+        "v": { "$ref": "#/$defs/version" },
+        "id": { "type": "string", "minLength": 1 },
+        "at": { "$ref": "#/$defs/moment" },
+        "date": { "$ref": "#/$defs/period" },
+        "until": { "$ref": "#/$defs/moment" },
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+        "note": { "type": "string" },
+        "of": { "type": "string", "minLength": 1 },
+        "by": { "type": "string" },
+        "ref": { "type": "string" },
+        "meta": { "type": "object" }
+      }
+    }
+  }
+}

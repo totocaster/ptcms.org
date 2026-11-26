@@ -1,0 +1,128 @@
+{{ define "head" }}
+{{- $css := resources.Get "css/history.scss" | toCSS | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+{{ end }}
+
+{{ define "main" }}
+{{- /* hugo.Data replaces site.Data from Hugo 0.156; production still builds with 0.139. */ -}}
+{{- $data := dict -}}
+{{- if ge hugo.Version "0.156.0" }}{{ $data = hugo.Data }}{{ else }}{{ $data = site.Data }}{{ end -}}
+{{- $h := index $data "manifesto" "history" -}}
+{{- $versions := $h.versions -}}
+{{- $to := index $versions 0 -}}
+{{- $from := index $versions 1 -}}
+{{- $sec := 3 -}}
+
+{{- /* Turn each change's parallel before/after rows into diff lines and count them. */ -}}
+{{- $items := slice -}}
+{{- range $i, $c := $h.changes -}}
+  {{- $ops := slice -}}
+  {{- $del := 0 -}}
+  {{- $add := 0 -}}
+  {{- $nb := len $c.before -}}
+  {{- $na := len $c.after -}}
+  {{- range $k := seq 0 (sub (cond (gt $nb $na) $nb $na) 1) -}}
+    {{- $b := "" -}}{{- if lt $k $nb }}{{ $b = index $c.before $k }}{{ end -}}
+    {{- $a := "" -}}{{- if lt $k $na }}{{ $a = index $c.after $k }}{{ end -}}
+    {{- if and $b $a (eq $b $a) -}}
+      {{- $ops = $ops | append (dict "op" "ctx" "text" $b) -}}
+    {{- else -}}
+      {{- with $b }}{{ $ops = $ops | append (dict "op" "del" "text" .) }}{{ $del = add $del 1 }}{{ end -}}
+      {{- with $a }}{{ $ops = $ops | append (dict "op" "add" "text" .) }}{{ $add = add $add 1 }}{{ end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $items = $items | append (dict "c" $c "n" (printf "%d.%d" $sec (add $i 1)) "ops" $ops "del" $del "add" $add) -}}
+{{- end -}}
+
+{{- $note := `<p>A changelog should record why, not only what. The manifesto asks tools to keep a provenance trail, and its own history keeps one too.</p>` -}}
+<article class="prose history">
+  {{ partial "title-block.html" (dict "p" . "note" ($note | safeHTML)) }}
+  <div class="meta history-meta">
+    <span><span class="k">Versions</span>{{ len $versions }}</span>
+    <span><span class="k">Current</span><a class="v-mono" href="{{ $to.url | relURL }}">{{ $to.version }}</a>{{ (time $to.date).Format "2006-01-02" }}</span>
+  </div>
+
+  <section aria-labelledby="versions">
+    <h2 id="versions"><a class="sec" href="#versions">§1</a>Versions</h2>
+    {{- $days := div (sub (time $to.date).Unix (time $from.date).Unix) 86400 }}
+    <aside class="marginnote"><p>The {{ lower $from.version }} and <span class="mono">{{ $to.version }}</span> were published {{ $days }} days apart. The address <a href="{{ "/manifesto/" | relURL }}"><code>/manifesto/</code></a> always shows the current text.</p></aside>
+    <div class="table-wrap">
+      <table class="booktabs">
+        <thead><tr><th scope="col">Version</th><th scope="col">Date</th><th scope="col">Status</th><th scope="col">Address</th></tr></thead>
+        <tbody>
+          {{- range $versions }}
+          {{- $num := findRE `^[0-9]` .version 1 }}
+          <tr>
+            <td>{{ if .url }}<a{{ with $num }} class="mono"{{ end }} href="{{ .url | relURL }}">{{ .version }}</a>{{ else }}<span{{ with $num }} class="mono"{{ end }}>{{ .version }}</span>{{ end }}</td>
+            <td class="hist-date">{{ (time .date).Format "2006-01-02" }}</td>
+            <td>{{ partial "status.html" .status }}</td>
+            <td class="hist-addr">{{ with .url }}<code>{{ . }}</code>{{ end }}{{ if and .url .note }} {{ end }}{{ with .note }}{{ . | markdownify }}{{ end }}</td>
+          </tr>
+          {{- end }}
+        </tbody>
+      </table>
+    </div>
+    {{- $last := sub (len $versions) 1 }}
+    {{- $labels := slice }}
+    {{- range $k := seq $last 0 }}{{ with index $versions $k }}{{ $labels = $labels | append (printf "%s on %s" .version .date) }}{{ end }}{{ end }}
+    <div class="timeline" role="img" aria-label="Timeline: {{ delimit $labels ", " }}">
+      {{- range $j, $k := seq $last 0 }}{{ with index $versions $k }}
+      {{- $label := printf "%s · %s" (cond (gt (len (findRE `^[0-9]` .version 1)) 0) (printf `<span class="mono">%s</span>` .version) .version) .date }}
+      {{- $dot := printf `<span class="tl-dot%s"></span>` (cond (eq .status "Current") " tl-dot--current" "") }}
+      {{- if eq $j 0 }}
+      <span>{{ $label | safeHTML }}</span>{{ $dot | safeHTML }}
+      {{- else }}
+      <span class="tl-line"></span>{{ $dot | safeHTML }}<span>{{ $label | safeHTML }}</span>
+      {{- end }}
+      {{- end }}{{ end }}
+    </div>
+  </section>
+
+  <section aria-labelledby="at-a-glance">
+    <h2 id="at-a-glance"><a class="sec" href="#at-a-glance">§2</a>The changes at a glance</h2>
+    <aside class="marginnote diff-key"><p><span class="bar bar--del" aria-hidden="true"></span><span class="k-del">removed line</span><span class="bar bar--add" aria-hidden="true"></span><span class="k-add">added line</span></p></aside>
+    <p>The changes below cover the manifesto’s core: its opening, the three laws, the principles, the sections and the Plaintext Test. The bars count the lines removed and added in each, so the size of every change is visible before you read it.</p>
+    <p>The prose of five other sections (Why now, Multi-tool by design, Minimal working conventions, Norms for tools, Adoption path) was rewritten too, and <span class="mono">{{ $to.version }}</span> adds two footnotes and a credit line. Those are not traced here.</p>
+    <div class="table-wrap fullwidth">
+      <table class="booktabs glance">
+        <thead><tr><th scope="col">Where</th><th scope="col">Size</th><th scope="col">What changed</th><th scope="col">Why</th></tr></thead>
+        <tbody>
+          {{- range $items }}
+          <tr>
+            <td class="glance-where"><span class="mono glance-n">{{ .n }}</span> <a href="#{{ .c.id }}">{{ .c.short | default .c.title }}</a></td>
+            <td class="glance-size"><span class="bars" role="img" aria-label="{{ .del }} removed, {{ .add }} added">
+              {{- if gt .del 0 }}{{ range seq .del }}<span class="bar bar--del"></span>{{ end }}{{ end }}
+              {{- if gt .add 0 }}{{ range seq .add }}<span class="bar bar--add"></span>{{ end }}{{ end -}}
+            </span></td>
+            <td>{{ .c.summary | markdownify }}</td>
+            <td>{{ with .c.why }}{{ . | markdownify }}{{ else }}<span class="why-missing">Reason not yet recorded.</span>{{ end }}</td>
+          </tr>
+          {{- end }}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="line-by-line">
+    <h2 id="line-by-line"><a class="sec" href="#line-by-line">§{{ $sec }}</a>{{ $from.version }} → <span class="mono">{{ $to.version }}</span>, line by line</h2>
+    <p class="history-lede">Unchanged lines are shown for context. Lines are quoted without their Markdown emphasis, and the reason for each change sits beside it.</p>
+    {{- range $items }}
+    <section class="change" aria-labelledby="{{ .c.id }}">
+      <h3 id="{{ .c.id }}"><a class="sec" href="#{{ .c.id }}">{{ .n }}</a>{{ .c.title }}</h3>
+      <div class="diff">
+        {{- range .ops }}
+        {{- if eq .op "add" }}
+        <ins class="diff-line diff-line--add"><span class="diff-mark" aria-hidden="true">+</span><span class="diff-text"><span class="vh">Added: </span>{{ .text }}</span></ins>
+        {{- else if eq .op "del" }}
+        <del class="diff-line diff-line--del"><span class="diff-mark" aria-hidden="true">−</span><span class="diff-text"><span class="vh">Removed: </span>{{ .text }}</span></del>
+        {{- else }}
+        <div class="diff-line diff-line--ctx"><span class="diff-mark" aria-hidden="true"></span><span class="diff-text">{{ .text }}</span></div>
+        {{- end }}
+        {{- end }}
+      </div>
+      <aside class="marginnote change-why"><p><span class="note-label">Why.</span> {{ with .c.why }}{{ . | markdownify }}{{ else }}<span class="why-missing">Reason not yet recorded.</span>{{ end }}</p>{{ with .c.note }}<p>{{ . | markdownify }}</p>{{ end }}</aside>
+    </section>
+    {{- end }}
+  </section>
+</article>
+{{ end }}

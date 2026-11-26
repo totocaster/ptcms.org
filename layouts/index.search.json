@@ -1,0 +1,17 @@
+{{- $items := slice -}}
+{{- range site.Pages -}}
+  {{- if and (.OutputFormats.Get "HTML") (ne .Kind "taxonomy") (ne .Kind "term") -}}
+    {{- $area := "" -}}
+    {{- with .FirstSection }}{{ if not .IsHome }}{{ $area = .Title }}{{ end }}{{ end -}}
+    {{- $heads := slice -}}
+    {{- range .Fragments.HeadingsMap }}{{ $heads = $heads | append (dict "id" .ID "title" (.Title | plainify)) }}{{ end -}}
+    {{- $item := dict "title" (partial "page-title.html" .) "url" .RelPermalink "area" $area "summary" (.Params.summary | default "" | plainify) "headings" $heads "text" (.Plain | truncate 4000) -}}
+    {{- if eq .Type "spec" -}}
+      {{- $rules := slice -}}
+      {{- range partial "rules.html" . }}{{ $rules = $rules | append (dict "id" .id "text" (.text | plainify)) }}{{ end -}}
+      {{- $item = merge $item (dict "rules" $rules) -}}
+    {{- end -}}
+    {{- $items = $items | append $item -}}
+  {{- end -}}
+{{- end -}}
+{{- $items | jsonify -}}

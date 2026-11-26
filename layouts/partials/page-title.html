@@ -1,0 +1,2 @@
+{{- /* Display title: drops the site-name prefix some mounted pages carry ("Plaintext Commons — Manifesto"). */ -}}
+{{- return (replace (.Params.shortTitle | default .Title) "Plaintext Commons — " "") -}}

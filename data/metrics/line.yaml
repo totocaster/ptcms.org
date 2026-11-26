@@ -1,0 +1,13 @@
+# Chapter 1: one record, exploded in place. Each field of the line gets a label on a leader line.
+# The line is written in the order of M-74. Its definition, reading.time v1, is in file.yaml.
+line: '{"at":"2026-11-26T07:30+01:00","until":"2026-11-26T08:05+01:00","metric":"reading.time","v":1,"value":35,"medium":"paper","note":"Before breakfast","by":"timer-app","ref":"s-2207"}'
+fields:
+  at: { says: "when it began", needs: "at or date: one is required" }
+  until: { says: "when it ended", needs: "optional" }
+  metric: { says: "which metric", needs: "required" }
+  v: { says: "definition version", needs: "required" }
+  value: { says: "the number", needs: "required" }
+  medium: { says: "a declared label", needs: "optional" }
+  note: { says: "for people", needs: "optional" }
+  by: { says: "who recorded it", needs: "optional" }
+  ref: { says: "its id at the source", needs: "optional" }

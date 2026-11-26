@@ -1,0 +1,21 @@
+{"format":"plaintext-metrics/0.2.0","set":"example/journal","by":"Example Author"}
+{"define":"room.temperature","v":1,"kind":"quantity","unit":"Cel","name":"Room temperature","about":"Air temperature, read from the wall sensor.","combine":"mean","labels":{"room":["study","bedroom"]}}
+{"define":"reading.pages","v":1,"kind":"count","name":"Pages read","about":"Whole pages finished that day."}
+{"define":"reading.done","v":1,"kind":"flag","name":"Read today"}
+{"define":"books.finished","v":1,"kind":"count","name":"Books finished"}
+{"define":"book.rating","v":1,"kind":"score","min":1,"max":5,"name":"Book rating","levels":{"1":"poor","5":"excellent"}}
+{"define":"book.rating","v":2,"kind":"score","min":1,"max":10,"name":"Book rating"}
+{"define":"run","v":1,"kind":"event","name":"Run","metrics":["distance","heart_rate.average"],"labels":{"surface":["road","trail","track"]}}
+{"define":"distance","v":1,"kind":"quantity","unit":["km","m"],"name":"Distance","combine":"sum"}
+{"define":"heart_rate.average","v":1,"kind":"quantity","unit":"/min","name":"Average heart rate","combine":"mean"}
+{"at":"2026-11-26T08:10+01:00","metric":"room.temperature","v":1,"value":19.5,"room":"study","by":"sensor-7","ref":"r-88213"}
+{"at":"2026-11-26T08:10+01:00","metric":"room.temperature","v":1,"value":17.8,"room":"bedroom","by":"sensor-9","ref":"r-41007"}
+{"date":"2026-11-26","metric":"reading.pages","v":1,"value":42}
+{"date":"2026-11-26","metric":"reading.done","v":1,"value":1,"note":"Before breakfast"}
+{"date":"2026-10","metric":"books.finished","v":1,"value":3}
+{"date":"2026-03-01","metric":"book.rating","v":1,"value":4}
+{"date":"2026-07-01","metric":"book.rating","v":2,"value":7}
+{"date":"2026-03-15","metric":"book.rating","v":1,"value":5}
+{"at":"2026-11-26T07:30+01:00","until":"2026-11-26T08:22+01:00","event":"run","v":1,"surface":"trail","lat":41.9028,"lon":12.4964,"note":"River loop","id":"run-1126"}
+{"at":"2026-11-26T07:30+01:00","metric":"distance","v":1,"value":10.2,"unit":"km","of":"run-1126"}
+{"at":"2026-11-26T07:30+01:00","metric":"heart_rate.average","v":1,"value":148,"of":"run-1126"}

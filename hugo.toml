@@ -1,15 +1,20 @@
 baseURL = 'https://plaintextcommons.org/'
 title = 'Plaintext Commons'
 
-languageCode = "us-en"
-DefaultContentLanguage = "en"
+languageCode = "en-us"
+defaultContentLanguage = "en"
 
-uglyURLs = true
+# Front-matter dates are local dates. Without this, a version published today
+# can count as "future" content until midnight UTC and drop out of the build.
+timeZone = "Europe/Rome"
 
-enableEmoji = true
+# Pages live at /path/ with an index.md twin beside them.
+uglyURLs = false
+
+enableEmoji = false
 enableGitInfo = false
 enableRobotsTXT = true
-canonifyURLs = false # breaks css since all links are no longer relative
+canonifyURLs = false
 
 disableKinds = ["taxonomy", "term"]
 
@@ -19,31 +24,38 @@ disableKinds = ["taxonomy", "term"]
     version = "main"
     [[module.imports.mounts]]
       source = "MANIFESTO.md"
-      target = "content/_index.md"
+      target = "content/manifesto/_index.md"
 
 [markup]
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
+    [markup.goldmark.parser]
+      autoHeadingID = true
+      [markup.goldmark.parser.attribute]
+        block = true
+        title = true
   [markup.highlight]
-    noClasses = false
+    codeFences = false
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
 
 [params]
   author = "Plaintext Commons"
   sitename = "Plaintext Commons"
-  description = "The manifesto and reference hub for the Plaintext Commons."
+  description = "Open, versioned plain-text formats and the manifesto behind them. Knowledge should outlast software."
   tagline = "Knowledge should outlast software."
-
-[languages]
-  [languages.en]
-    languageName = "English"
-    languageCode = "en-us"
-    weight = 1
+  repo = "https://github.com/totocaster/plaintext-commons"
 
 [outputs]
-  home = ["HTML", "RSS", "Markdown"]
+  home = ["HTML", "RSS", "Markdown", "Formats", "Llms", "Search"]
   section = ["HTML", "Markdown"]
   page = ["HTML", "Markdown"]
+
+[mediaTypes]
+  [mediaTypes."text/markdown"]
+    suffixes = ["md"]
 
 [outputFormats]
   [outputFormats.HTML]
@@ -52,12 +64,29 @@ disableKinds = ["taxonomy", "term"]
     isHTML = true
     rel = "canonical"
     permalinkable = true
-    noUgly = true
   [outputFormats.Markdown]
     mediaType = "text/markdown"
     baseName = "index"
     isPlainText = true
     rel = "alternate"
-    suffix = "md"
     permalinkable = true
-    noUgly = false
+  [outputFormats.Rules]
+    mediaType = "application/json"
+    baseName = "rules"
+    isPlainText = true
+    notAlternative = true
+  [outputFormats.Formats]
+    mediaType = "application/json"
+    baseName = "formats"
+    isPlainText = true
+    notAlternative = true
+  [outputFormats.Llms]
+    mediaType = "text/plain"
+    baseName = "llms"
+    isPlainText = true
+    notAlternative = true
+  [outputFormats.Search]
+    mediaType = "application/json"
+    baseName = "search"
+    isPlainText = true
+    notAlternative = true

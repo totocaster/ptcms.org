@@ -1,0 +1,14 @@
+{{ define "main" }}
+<article class="prose">
+  {{ partial "title-block.html" (dict "p" . "note" ("<p>Link to a term with its anchor, for example <span class=\"mono\" style=\"font-size:13px\">/glossary/#corpus</span>.</p>" | safeHTML)) }}
+  {{ .Content }}
+  <dl class="glossary">
+    {{- range (partial "data.html" .).glossary }}
+    <div class="g-entry" id="{{ .id }}">
+      <dt><a href="#{{ .id }}">{{ .term }}</a></dt>
+      <dd>{{ .definition | markdownify }}</dd>
+    </div>
+    {{- end }}
+  </dl>
+</article>
+{{ end }}

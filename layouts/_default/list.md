@@ -1,17 +1,10 @@
-{{- /* Markdown output for section landing pages */ -}}
-{{- if .Title -}}
-# {{ .Title }}
+{{- partial "md-head.md" . -}}
+{{ partial "md-clean.html" .RawContent }}
+{{- with .Pages }}
 
-{{- end -}}
-{{ with .RawContent }}
-{{ . }}
-
-{{ end }}
-{{- if .Pages -}}
 ## Pages
 
-{{ range .Pages -}}
-- [{{ .Title }}]({{ with .OutputFormats.Get "Markdown" }}{{ .RelPermalink }}{{ else }}{{ .RelPermalink }}{{ end }})
-{{ end }}
-
-{{- end -}}
+{{ range . -}}
+- [{{ .Title }}]({{ with .OutputFormats.Get "Markdown" }}{{ .Permalink }}{{ else }}{{ .Permalink }}{{ end }}){{ with .Params.summary }}: {{ . }}{{ end }}
+{{ end -}}
+{{- end }}

@@ -1,0 +1,15 @@
+{{- /* A one-paragraph quote that opens with **ID · STRENGTH · applies** is a rule:
+       > **T-7 · MUST · writers** Metadata lines must be indented …
+       It renders as a paragraph with its ID and strength in the margin.
+       Any other quote is a run-in callout between hairlines. */ -}}
+{{- $text := string .Text -}}
+{{- $page := .Page -}}
+{{- $m := findRESubmatch `(?s)^\s*<p><strong>([A-Z]+-[0-9]+)(?: · ([A-Z ]+?))?(?: · ([a-z ,]+))?</strong>\s*(.*?)</p>\s*$` $text 1 -}}
+{{- with $m -}}
+{{- $g := index . 0 -}}
+{{- $id := index $g 1 -}}
+{{- $open := in ($page.Params.open_rules | default slice) $id -}}
+<p class="rule{{ if $open }} rule--open{{ end }}" id="{{ $id }}"><span class="rule-tag"><a href="#{{ $id }}">{{ $id }}</a>{{ with index $g 2 }} <span class="strength strength--{{ . | lower | replaceRE ` ` `-` }}">{{ . }}</span>{{ end }}{{ with index $g 3 }} <span class="applies">· {{ . }}</span>{{ end }}{{ if $open }}<br><a class="open-flag" href="#section-{{ $page.Params.open_section | default "12" }}">Open question: not final</a>{{ end }}</span>{{ index $g 4 | safeHTML }}</p>
+{{- else -}}
+<blockquote>{{ $text | safeHTML }}</blockquote>
+{{- end -}}

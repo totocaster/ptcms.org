@@ -1,0 +1,447 @@
+# Plaintext Tasks atlas: rows of same-size cells, one aspect of one line type per row.
+# Read by layouts/tasks-atlas/single.html and single.md.
+# A cell is either { empty: text } or { lines, reason, rules, sections }.
+# A snippet line is { t: text, k: kind } or { segs: [{ t, k }, …] }.
+# Kinds: title, heading, task, meta, note, sep, blank, ws (visible whitespace), del, add (a rewrite, as a diff).
+# Cell anchors are cell-<row id>-c|t|i; the checker in static/js/tasks.js links to them.
+# Rule IDs must exist in content/tasks/v1.0.0.md; the templates fail the build otherwise.
+
+columns:
+  - { key: c, verdict: valid, word: "Canonical", def: "What a canonical writer emits." }
+  - { key: t, verdict: tolerated, word: "Tolerated", def: "Accepted, but not the canonical or recommended form." }
+  - { key: i, verdict: invalid, word: "Invalid", def: "Breaks a rule of 1.0.0." }
+
+groups:
+  - label: "Task"
+    type: task
+    rows:
+      - id: task-bullet
+        aspect: "bullet"
+        c:
+          lines: [{ t: "- [ ] Ship beta", k: task }]
+          reason: "A dash, one space, then the checkbox."
+          rules: [T-5, T-6]
+          sections: ["7.4"]
+        t: { empty: "The spec grants no tolerance for the bullet." }
+        i:
+          lines: [{ t: "* [ ] Ship beta", k: task }]
+          reason: "Only `-` is valid as the task bullet in 1.0.0."
+          rules: [T-5]
+          sections: []
+      - id: task-state
+        aspect: "state token"
+        c:
+          lines: [{ t: "- [>] Review onboarding copy", k: task }]
+          reason: "One of four tokens: `[ ]`, `[x]`, `[>]` or `[-]`."
+          rules: []
+          sections: ["7.4", "10"]
+        t: { empty: "The spec lists no other tokens." }
+        i:
+          lines: [{ t: "- [X] File taxes", k: task }]
+          reason: "`[X]` isn’t one of the four tokens. Write `[x]`."
+          rules: []
+          sections: ["7.4"]
+      - id: task-spacing
+        aspect: "spacing"
+        c:
+          lines: [{ t: "- [ ] Book dentist", k: task }]
+          reason: "One space after the dash, one after the bracket."
+          rules: [T-6, T-45]
+          sections: []
+        t: { empty: "Checkbox spacing is a must: no tolerance." }
+        i:
+          lines: [{ t: "-[ ] Book dentist", k: task }]
+          reason: "The checkbox token must be spaced exactly as shown."
+          rules: [T-6]
+          sections: []
+      - id: task-nesting
+        aspect: "nesting"
+        c:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { t: "  - [ ] Email QA", k: task }
+          reason: "A subtask sits one level under the task it belongs to."
+          rules: [T-23, T-24, T-42]
+          sections: []
+        t: { empty: "Tabs and other widths are under Indentation." }
+        i:
+          lines:
+            - { t: "## Work", k: heading }
+            - { t: "  - [ ] Email QA", k: task }
+          reason: "Indented like a subtask, but no task sits one level up to attach it to."
+          rules: [T-42]
+          sections: []
+
+  - label: "Metadata"
+    type: meta
+    rows:
+      - id: meta-placement
+        aspect: "placement"
+        c:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { t: "  @due: 2026-04-01", k: meta }
+          reason: "Indented deeper than its task."
+          rules: [T-10, T-40]
+          sections: []
+        t: { empty: "Metadata indentation is a must: no tolerance." }
+        i:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { t: "@due: 2026-04-01", k: meta }
+          reason: "Metadata must be indented deeper than its task."
+          rules: [T-10]
+          sections: []
+      - id: meta-nested
+        aspect: "on nested tasks"
+        c:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { t: "  @due: 2026-04-01", k: meta }
+            - { t: "  - [ ] Email QA", k: task }
+          reason: "Email QA inherits `@due` from Ship beta."
+          rules: [T-26, T-29]
+          sections: []
+        t: { empty: "Nothing in between: nested tasks have no metadata of their own." }
+        i:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { t: "  - [ ] Email QA", k: task }
+            - { t: "    @due: 2026-04-01", k: meta }
+          reason: "Only non-nested tasks carry metadata in 1.0.0."
+          rules: [T-11, T-27, T-54]
+          sections: []
+      - id: meta-value
+        aspect: "shape and value"
+        c:
+          lines:
+            - { t: "  @due: 2026-04-01", k: meta }
+            - { t: "  @priority: 1", k: meta }
+          reason: "Dates as `YYYY-MM-DD` and `@priority` as `1`, `2` or `3`, as recommended."
+          rules: [T-9]
+          sections: ["7.5"]
+        t:
+          lines: [{ t: "  @due: 1 April", k: meta }]
+          reason: "Values are plain text, so this is accepted. The date form is only recommended."
+          rules: [T-9]
+          sections: ["7.5"]
+        i:
+          lines: [{ t: "  @due 2026-04-01", k: meta }]
+          reason: "No colon after the key. The shape is `@key: value`."
+          rules: [T-13]
+          sections: ["7.5"]
+      - id: meta-unknown
+        aspect: "unknown keys"
+        c:
+          lines: [{ t: "  @area: garden", k: meta }]
+          reason: "Unknown keys are valid and must be preserved."
+          rules: [T-12, T-39]
+          sections: []
+        t: { empty: "Nothing to tolerate: unknown keys are valid." }
+        i:
+          lines:
+            - { segs: [{ t: "− ", k: del }, { t: "  @area: garden", k: meta }] }
+            - { segs: [{ t: "+ ", k: add }, { t: "  @project: garden", k: meta }] }
+          reason: "A writer renamed an unknown key. Keep it as written."
+          rules: [T-12, T-52]
+          sections: []
+
+  - label: "Note"
+    type: note
+    rows:
+      - id: note-indent
+        aspect: "indentation"
+        c:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { t: "  Waiting on icons.", k: note }
+          reason: "One level under the task it belongs to."
+          rules: [T-14, T-25]
+          sections: []
+        t: { empty: "A note at root under a heading is open. See “Not settled”." }
+        i:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { t: "Waiting on icons.", k: note }
+          reason: "At the task’s own level, so it can’t belong to the task."
+          rules: [T-14]
+          sections: []
+      - id: note-lookalike
+        aspect: "look-alikes"
+        c:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { t: "  Budget: under 200", k: note }
+          reason: "A colon alone doesn’t make metadata. Only `@key:` does."
+          rules: [T-13]
+          sections: ["7.5"]
+        t: { empty: "Nothing to tolerate: it is simply a note." }
+        i:
+          lines:
+            - { segs: [{ t: "− ", k: del }, { t: "  Budget: under 200", k: note }] }
+            - { segs: [{ t: "+ ", k: add }, { t: "  @budget: under 200", k: meta }] }
+          reason: "A writer turned a note into metadata. It should not."
+          rules: [T-50]
+          sections: []
+
+  - label: "Section heading"
+    type: heading
+    rows:
+      - id: heading-shape
+        aspect: "shape"
+        c:
+          lines:
+            - { t: "## Work", k: heading }
+            - { t: "### Errands", k: heading }
+          reason: "Two to six `#`, then one space."
+          rules: [T-45]
+          sections: ["7.3"]
+        t: { empty: "The spec grants no tolerance for heading shape." }
+        i:
+          lines: [{ t: "##Work", k: heading }]
+          reason: "No space after the `#`. Write `## Work`."
+          rules: [T-13]
+          sections: ["7.3"]
+
+  - label: "Document title"
+    type: title
+    rows:
+      - id: title-place
+        aspect: "place and count"
+        c:
+          lines:
+            - { t: "# Workboard", k: title }
+            - { t: "", k: blank }
+            - { t: "## Work", k: heading }
+          reason: "Once, before any section, task or note."
+          rules: [T-1, T-2, T-3]
+          sections: []
+        t:
+          lines:
+            - { t: "## Work", k: heading }
+            - { t: "# Workboard", k: title }
+          reason: "A title should come first, and once. Late or repeated, it breaks a should, not a must."
+          rules: [T-2, T-3]
+          sections: []
+        i:
+          lines: [{ t: "#Workboard", k: title }]
+          reason: "No space after the `#`."
+          rules: [T-13]
+          sections: ["7.2"]
+
+  - label: "Archive separator"
+    type: sep
+    rows:
+      - id: sep-placement
+        aspect: "placement"
+        c:
+          lines:
+            - { t: "## Personal", k: heading }
+            - { t: "---", k: sep }
+            - { t: "## Archive", k: heading }
+          reason: "Exactly `---`, at root indentation."
+          rules: [T-16, T-17]
+          sections: []
+        t: { empty: "Placement is a must: no tolerance." }
+        i:
+          lines:
+            - { t: "- [x] File taxes", k: task }
+            - { t: "  ---", k: sep }
+          reason: "The separator must sit at root indentation."
+          rules: [T-16]
+          sections: []
+      - id: sep-shape
+        aspect: "shape and count"
+        c:
+          lines:
+            - { t: "## Work", k: heading }
+            - { t: "- [ ] Ship beta", k: task }
+          reason: "No separator at all: the whole document is active."
+          rules: []
+          sections: ["5", "7.7"]
+        t: { empty: "Shape and count are musts: no tolerance." }
+        i:
+          lines: [{ t: "----", k: sep }]
+          reason: "Exactly three hyphens, and at most once per document."
+          rules: [T-17, T-18]
+          sections: []
+
+  - label: "Indentation"
+    type: none
+    rows:
+      - id: indent-width
+        aspect: "width"
+        c:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { segs: [{ t: "··", k: ws }, { t: "- [ ] Email QA", k: task }] }
+          reason: "Two spaces per level. Each `·` marks a space."
+          rules: [T-19, T-23, T-44]
+          sections: []
+        t:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { segs: [{ t: "→ ", k: ws }, { t: "- [ ] Email QA", k: task }] }
+          reason: "Readers may accept tabs or other widths on import. Writers normalize to two spaces."
+          rules: [T-21, T-22]
+          sections: []
+        i:
+          lines:
+            - { t: "- [ ] Ship beta", k: task }
+            - { segs: [{ t: "→ ", k: ws }, { t: "- [ ] Email QA", k: task }] }
+          reason: "The same tab, written by a canonical serializer, which must not write tabs."
+          rules: [T-20]
+          sections: []
+
+  - label: "Line endings"
+    type: none
+    rows:
+      - id: file-endings
+        aspect: "and encoding"
+        c:
+          lines: [{ segs: [{ t: "- [ ] Ship beta", k: task }, { t: "␊", k: ws }] }]
+          reason: "UTF-8 text with LF line endings."
+          rules: [T-43]
+          sections: ["4"]
+        t:
+          lines: [{ segs: [{ t: "- [ ] Ship beta", k: task }, { t: "␍␊", k: ws }] }]
+          reason: "CRLF is accepted; LF is preferred."
+          rules: []
+          sections: ["4"]
+        i: { empty: "The spec lists nothing as invalid here." }
+
+# The one known open question in 1.0.0.
+open:
+  id: open-root-note
+  label: "Not settled"
+  aspect: "root-level note"
+  cell:
+    lines:
+      - { t: "## Work", k: heading }
+      - { t: "", k: blank }
+      - { t: "Shared notes for current work…", k: note }
+    reason: "The quick example puts this note at root, under a heading. The rule says notes are indented deeper than their parent."
+    rules: [T-14, T-25]
+    sections: ["6"]
+  aside: "The spec’s quick example and T-14 disagree about this line. Until a later version settles it, the atlas marks it open, and the checker reports a root-level note under a heading as open rather than invalid. A note indented one level under its heading follows T-14."
+
+out_of_scope: "Recurrence, richer date-time values, references between tasks and stricter ID rules."
+
+checker:
+  default: mistakes
+  samples:
+    - key: mistakes
+      label: "Common mistakes"
+      # Line 8 starts with a tab, so this sample is an escaped string.
+      text: "# Home\n## This week\n* [ ] Fix the bike light\n- [X] Buy batteries\n-[ ] Check the mount\n- [ ] Clear the gutters\n@due: 2026-12-06\n\t- [ ] Ladder from the shed\n    @priority: 1\n- [ ] Post the parcel\n  @due:2026-12-1\n# Errands"
+    - key: valid
+      label: "Valid file"
+      text: |-
+        # Home
+
+        ## This week
+
+        - [ ] Fix the bike light
+          @due: 2026-11-28
+          The rear one, not the front.
+          - [ ] Buy batteries
+          - [ ] Check the mount
+
+        - [>] Clear the gutters
+          @defer-until: 2026-12-06
+
+        ## Later
+
+        - [ ] Sort the winter clothes
+    - key: archive
+      label: "Archive rules"
+      text: |-
+        # Home
+
+        ## This week
+
+        - [ ] Fix the bike light
+          @due: 2026-11-28
+
+        ---
+
+        ## Archive
+
+        - [x] Buy batteries
+          @done: 2026-11-24
+        - [-] Repaint the fence
+          @canceled: 2026-11-20
+          Replacing it in spring instead.
+          ---
+        ---
+    - key: spec
+      label: "Spec example"
+      text: |-
+        # Workboard
+
+        ## Work
+
+        Shared notes for current work items.
+
+        - [ ] Ship beta
+          @id: 6a7a5b2e
+          @created: 2026-03-25
+          @due: 2026-04-01
+          Waiting on icons from design.
+          - [ ] Email QA
+          - [ ] Prepare release notes
+
+        - [>] Review onboarding copy
+          @defer-until: 2026-03-28
+
+        ## Personal
+
+        - [ ] Book dentist
+          @due: 2026-03-31
+
+        ---
+
+        ## Archive
+
+        - [x] File taxes
+          @done: 2026-03-20
+
+        - [-] Cancel old ISP contract
+          @canceled: 2026-03-18
+
+# Static result for the default sample, so the page reads without JavaScript.
+# Regenerate after changing the sample or the checker:
+#   node static/js/tasks.js < mistakes.tasks.md   (replace the block below with its output)
+example:
+  counts: {"lines":12,"invalid":5,"tolerated":3,"open":0,"valid":4}
+  lines:
+    - {"line":1,"text":"# Home","type":"title","verdict":"valid"}
+    - {"line":2,"text":"## This week","type":"heading","verdict":"valid"}
+    - {"line":3,"text":"* [ ] Fix the bike light","type":"task","verdict":"invalid"}
+    - {"line":4,"text":"- [X] Buy batteries","type":"task","verdict":"invalid"}
+    - {"line":5,"text":"-[ ] Check the mount","type":"task","verdict":"invalid"}
+    - {"line":6,"text":"- [ ] Clear the gutters","type":"task","verdict":"valid"}
+    - {"line":7,"text":"@due: 2026-12-06","type":"meta","verdict":"invalid"}
+    - {"line":8,"text":"\t- [ ] Ladder from the shed","type":"task","verdict":"tolerated"}
+    - {"line":9,"text":"    @priority: 1","type":"meta","verdict":"invalid"}
+    - {"line":10,"text":"- [ ] Post the parcel","type":"task","verdict":"valid"}
+    - {"line":11,"text":"  @due:2026-12-1","type":"meta","verdict":"tolerated"}
+    - {"line":12,"text":"# Errands","type":"title","verdict":"tolerated"}
+  problems:
+    - {"line":3,"verdict":"invalid","title":"Wrong task bullet","hint":"Only `-` is a valid task bullet in 1.0.0.","rules":["T-5"],"sections":[],"cell":"task-bullet-i"}
+    - {"line":4,"verdict":"invalid","title":"Uppercase `[X]`","hint":"The done state is `[x]`, lowercase.","rules":[],"sections":["7.4"],"cell":"task-state-i"}
+    - {"line":5,"verdict":"invalid","title":"Checkbox spacing","hint":"Write `- [ ]` with exactly one space after the dash.","rules":["T-6"],"sections":[],"cell":"task-spacing-i"}
+    - {"line":7,"verdict":"invalid","title":"Metadata not indented","hint":"Metadata lines are indented deeper than their task.","rules":["T-10"],"sections":[],"cell":"meta-placement-i"}
+    - {"line":8,"verdict":"tolerated","title":"Tab indentation","hint":"Readers may accept tabs on import. Writers use two spaces per level and must not write tabs.","rules":["T-20","T-21","T-22"],"sections":[],"cell":"indent-width-t"}
+    - {"line":9,"verdict":"invalid","title":"Metadata on a nested task","hint":"Only non-nested tasks carry metadata. Nested tasks inherit it.","rules":["T-11","T-27"],"sections":[],"cell":"meta-nested-i"}
+    - {"line":11,"verdict":"tolerated","title":"No space after the colon","hint":"Writers put exactly one space after a metadata colon.","rules":["T-45"],"sections":[],"cell":""}
+    - {"line":11,"verdict":"tolerated","title":"Date not in `YYYY-MM-DD`","hint":"The recommended form for `@due` is `YYYY-MM-DD`.","rules":["T-9"],"sections":["7.5"],"cell":"meta-value-t"}
+    - {"line":12,"verdict":"tolerated","title":"Second document title","hint":"A document title should appear at most once. Use `##` for a section.","rules":["T-2"],"sections":[],"cell":"title-place-t"}
+  preview:
+    - {"kind":"title","text":"Home"}
+    - {"kind":"heading","text":"This week"}
+    - {"kind":"task","text":"Clear the gutters","state":"open","depth":0,"meta":[],"inherited":[]}
+    - {"kind":"task","text":"Ladder from the shed","state":"open","depth":1,"meta":[],"inherited":[]}
+    - {"kind":"task","text":"Post the parcel","state":"open","depth":0,"meta":["@due 2026-12-1"],"inherited":[]}
+    - {"kind":"title","text":"Errands"}
+  hits: {"task-bullet-i":[3],"task-state-i":[4],"task-spacing-i":[5],"meta-placement-i":[7],"indent-width-t":[8],"meta-nested-i":[9],"meta-value-t":[11],"title-place-t":[12]}

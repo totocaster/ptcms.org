@@ -1,0 +1,209 @@
+{{ define "head" }}
+{{- $css := resources.Get "css/tasks.scss" | toCSS | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+{{- end }}
+
+{{ define "main" }}
+{{- /* Plaintext Tasks atlas: a matrix of same-size cells and a checker.
+       Content comes from data/tasks/atlas.yaml. Its `example` block is the checker's output
+       (static/js/tasks.js) for the default sample, so the page reads without JavaScript;
+       the markup below mirrors what tasks.js renders. */ -}}
+{{- /* hugo.Data replaces site.Data from Hugo 0.156; production still builds with 0.139. */ -}}
+{{- $data := dict -}}
+{{- if ge hugo.Version "0.156.0" }}{{ $data = hugo.Data }}{{ else }}{{ $data = site.Data }}{{ end -}}
+{{- $d := index $data "tasks" "atlas" -}}
+{{- $specs := where (where .CurrentSection.RegularPages "Type" "spec") "Params.version" .Params.describes -}}
+{{- if not $specs }}{{ errorf "%s: no spec page with version %q" .File.Path .Params.describes }}{{ end -}}
+{{- $spec := index $specs 0 -}}
+{{- $s := $spec.RelPermalink -}}
+{{- $rules := partial "rules.html" $spec -}}
+{{- $ids := $spec.Fragments.Identifiers -}}
+{{- $guide := false }}{{ $guideURL := "#" }}{{ with where .CurrentSection.RegularPages "Params.role" "guide" }}{{ $guide = index . 0 }}{{ $guideURL = $guide.RelPermalink }}{{ end -}}
+{{- $icons := dict
+  "valid" `<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>`
+  "tolerated" `<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 8.5c2-3.5 3.5 1.5 5.5-1.5s3.5-1.5 5.5-2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`
+  "invalid" `<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" fill="none" stroke="currentColor" stroke-width="2"/></svg>`
+  "open" `<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4.6 5.2a2.4 2.4 0 1 1 3.4 2.2c-.7.3-1 .8-1 1.5v.6" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="7" cy="12" r="1.1" fill="currentColor"/></svg>`
+-}}
+{{- $words := dict "valid" "Canonical" "tolerated" "Tolerated" "invalid" "Invalid" "open" "Open" -}}
+{{- $typeWord := dict "title" "title" "heading" "heading" "task" "task" "meta" "metadata" "note" "note" "sep" "separator" "blank" "blank" -}}
+{{- $kinds := dict "title" "t-title" "heading" "t-heading" "task" "t-task" "meta" "t-meta" "note" "t-note" "sep" "t-sep" "blank" "t-blank" "ws" "ws" "del" "d-del" "add" "d-add" -}}
+{{- $box := dict
+  "open" ""
+  "done" `<svg viewBox="0 0 14 14"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="#FFFFFF" stroke-width="2.4"/></svg>`
+  "deferred" `<svg viewBox="0 0 10 10"><path d="M3 1.5l4 3.5-4 3.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`
+  "canceled" `<span class="pv-dash"></span>`
+-}}
+{{- $ex := $d.example -}}
+
+{{- /* Labels for every cell, and checks that every cited rule, section and linked cell exists. */ -}}
+{{- $labels := dict -}}
+{{- $cited := slice -}}
+{{- range $g := $d.groups }}{{ range $r := $g.rows }}{{ range $d.columns }}
+  {{- $c := index $r .key }}
+  {{- if not $c }}{{ errorf "atlas.yaml row %s: no %s cell" $r.id .key }}{{ end }}
+  {{- $labels = merge $labels (dict (printf "%s-%s" $r.id .key) (printf "%s · %s · %s" $g.label $r.aspect (lower .word))) }}
+  {{- $cited = $cited | append (dict "where" (printf "row %s, cell %s" $r.id .key) "rules" ($c.rules | default slice) "sections" ($c.sections | default slice)) }}
+{{- end }}{{ end }}{{ end }}
+{{- $labels = merge $labels (dict $d.open.id (printf "%s · %s · open" $d.open.label $d.open.aspect)) -}}
+{{- $cited = $cited | append (dict "where" "open cell" "rules" $d.open.cell.rules "sections" $d.open.cell.sections) -}}
+{{- range $ex.problems }}{{ $cited = $cited | append (dict "where" (printf "example line %v" .line) "rules" .rules "sections" .sections) }}{{ if and .cell (not (index $labels .cell)) }}{{ errorf "atlas.yaml example line %v: no atlas cell %s" .line .cell }}{{ end }}{{ end -}}
+{{- range $cited }}{{ $w := .where }}
+  {{- range .rules }}{{ if not (where $rules "id" .) }}{{ errorf "atlas.yaml %s: rule %s is not in %s" $w . $spec.File.Path }}{{ end }}{{ end }}
+  {{- range .sections }}{{ if not (in $ids (printf "section-%s" .)) }}{{ errorf "atlas.yaml %s: section %s is not in %s" $w . $spec.File.Path }}{{ end }}{{ end }}
+{{- end -}}
+{{- $ctx := dict "s" $s "icons" $icons "kinds" $kinds "hits" $ex.hits -}}
+
+{{- $note := printf `<p>The <a href="%s">overview</a> shows the whole format in one file. This page takes it apart, one rule at a time. The <a href="%s">specification</a> stays the normative text.</p>` $guideURL $s -}}
+<article class="prose tasks-atlas">
+  {{ partial "title-block.html" (dict "p" . "note" ($note | safeHTML)) }}
+
+  <h2 id="read">How to read the atlas</h2>
+  <aside class="marginnote"><p>Small multiples: one snippet, one change. Every cell is drawn at the same size, so reading across a row shows exactly what changes.</p><p>In snippets, <code class="ws">·</code> marks a space, <code class="ws">→</code> a tab, and <code class="ws">␊</code> and <code class="ws">␍␊</code> the line endings. Lines marked <code class="d-del">−</code> and <code class="d-add">+</code> show a rewrite, as a diff.</p></aside>
+  <p>Each row is one aspect of one kind of line: a <span class="t-task">task</span>’s bullet, a <span class="t-meta">metadata</span> line’s placement, the <span class="t-sep">archive separator</span>’s shape. Each column is a verdict. <span class="verdict verdict--valid">{{ index $icons "valid" | safeHTML }}Canonical</span> is what a canonical writer emits. <span class="verdict verdict--tolerated">{{ index $icons "tolerated" | safeHTML }}Tolerated</span> is accepted, but isn’t the canonical or recommended form. <span class="verdict verdict--invalid">{{ index $icons "invalid" | safeHTML }}Invalid</span> breaks a rule of <span class="mono">{{ $spec.Params.version }}</span>. Under each cell are the rules it rests on.</p>
+  <p>A tolerant reader may still accept invalid input, as long as it avoids destructive rewrites (<a class="rid" href="{{ $s }}#T-55">T-55</a>). A line that starts like a heading, task, metadata line or separator but doesn’t fit that shape is read here as invalid, not as a note, because note lines don’t begin with that syntax (<a class="rid" href="{{ $s }}#T-13">T-13</a>).</p>
+
+  <h2 id="atlas">The atlas</h2>
+  <div class="atlas-scroll fullwidth">
+    <table class="booktabs atlas">
+      <caption class="vh">Plaintext Tasks {{ $spec.Params.version }} by example. Rows are aspects of line types; columns are verdicts.</caption>
+      <colgroup><col class="atlas-col-head"><col><col><col></colgroup>
+      <thead>
+        <tr>
+          <th scope="col">Line and aspect</th>
+          {{- range $d.columns }}
+          <th scope="col"><span class="verdict verdict--{{ .verdict }}">{{ index $icons .verdict | safeHTML }}{{ .word }}</span><span class="col-def">{{ .def }}</span></th>
+          {{- end }}
+        </tr>
+      </thead>
+      {{- range $g := $d.groups }}
+      <tbody class="atlas-group">
+        {{- range $i, $r := $g.rows }}
+        <tr id="atlas-{{ $r.id }}">
+          <th scope="row"><span class="atlas-type{{ if $i }} vh{{ end }}{{ with index $kinds $g.type }} {{ . }}{{ end }}">{{ $g.label }}</span><span class="atlas-aspect">{{ $r.aspect }}</span></th>
+          {{- range $d.columns }}{{ $cid := printf "%s-%s" $r.id .key }}
+          {{ template "tasks-atlas-cell" (dict "c" (index $r .key) "id" $cid "verdict" .verdict "word" .word "label" (index $labels $cid) "ctx" $ctx) }}
+          {{- end }}
+        </tr>
+        {{- end }}
+      </tbody>
+      {{- end }}
+      <tbody class="atlas-group atlas-open">
+        <tr id="atlas-open">
+          <th scope="row"><span class="atlas-type">{{ $d.open.label }}</span><span class="atlas-aspect">{{ $d.open.aspect }}, open in <span class="mono">{{ $spec.Params.version }}</span></span></th>
+          {{ template "tasks-atlas-cell" (dict "c" $d.open.cell "id" $d.open.id "verdict" "open" "word" "Open" "label" (index $labels $d.open.id) "ctx" $ctx) }}
+          <td colspan="2" class="atlas-aside"><p>{{ $d.open.aside | htmlEscape | replaceRE `\b(T-[0-9]+)\b` (printf `<a class="rid" href="%s#$1">$1</a>` $s) | safeHTML }}</p></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="atlas-out"><span class="note-label">Out of scope.</span> {{ $d.out_of_scope }} Later versions may take these up (<a class="rid" href="{{ $s }}#section-15">§15</a>).</p>
+
+  {{- $default := index (where $d.checker.samples "key" $d.checker.default) 0 }}
+  <h2 id="check">Check a file</h2>
+  <aside class="marginnote"><p>The checker follows the spec’s own example where the two disagree, and reports those lines as open rather than invalid. It runs in your browser; nothing is sent anywhere.</p></aside>
+  <p>Type or paste a Plaintext Tasks file. Each line gets a type and a verdict, each problem links to the atlas cell it matches, and that cell is outlined above with the line numbers from your file.</p>
+  <div class="checker fullwidth" data-tasks-checker data-spec="{{ $s }}">
+    <div class="button-row checker-samples" data-samples hidden>
+      <span class="checker-samples-label">Load an example</span>
+      {{- range $d.checker.samples }}
+      <button type="button" class="button" aria-pressed="{{ eq .key $d.checker.default }}" data-sample="{{ .text }}">{{ .label }}</button>
+      {{- end }}
+    </div>
+    <div class="checker-grid">
+      <div class="checker-input">
+        <label class="field-label" for="checker-file">Your file</label>
+        <textarea id="checker-file" class="code-input" spellcheck="false" autocomplete="off" autocapitalize="off" rows="18">{{ $default.text }}</textarea>
+        <noscript><p class="checker-note">The checker needs JavaScript. The results show the example file, “{{ $default.label }}”.</p></noscript>
+      </div>
+      <div class="checker-lines">
+        <h3 class="checker-h">Line by line</h3>
+        {{- with $ex.counts }}
+        <p class="checker-summary" role="status" aria-live="polite" data-summary>{{ .lines }} {{ cond (eq .lines 1) "line" "lines" }} · {{ .invalid }} invalid · {{ .tolerated }} tolerated · {{ .open }} open</p>
+        {{- end }}
+        <div class="table-wrap">
+          <table class="booktabs checker-table">
+            <thead><tr><th scope="col" class="num">Line</th><th scope="col">Text</th><th scope="col">Type</th><th scope="col">Verdict</th></tr></thead>
+            <tbody data-lines>
+              {{- range $ex.lines }}
+              <tr class="cl cl--{{ .verdict }}"><td class="num">{{ .line }}</td><td><code class="t-{{ .type }}">{{ .text | htmlEscape | replaceRE "\t" `<span class="ws">→</span> ` | safeHTML }}</code></td><td class="t-{{ .type }}">{{ index $typeWord .type }}</td><td><span class="verdict verdict--{{ .verdict }}">{{ index $icons .verdict | safeHTML }}{{ index $words .verdict }}</span></td></tr>
+              {{- end }}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="checker-problems">
+        <h3 class="checker-h">Problems</h3>
+        <ol class="problem-list" role="list" data-problems>
+          {{- range $ex.problems }}
+          <li class="problem">
+            <p class="problem-head"><span class="problem-line">Line {{ .line }}</span> <span class="verdict verdict--{{ .verdict }}">{{ index $icons .verdict | safeHTML }}{{ index $words .verdict }}</span> <span class="problem-title">{{ .title | htmlEscape | replaceRE "`([^`]+)`" "<code>$1</code>" | safeHTML }}</span></p>
+            <p class="problem-hint">{{ .hint | htmlEscape | replaceRE "`([^`]+)`" "<code>$1</code>" | safeHTML }}</p>
+            {{- $refs := slice }}
+            {{- range .rules }}{{ $refs = $refs | append (printf `<a class="rid" href="%s#%s">%s</a>` $s . .) }}{{ end }}
+            {{- range .sections }}{{ $refs = $refs | append (printf `<a class="rid" href="%s#section-%s">§%s</a>` $s . .) }}{{ end }}
+            {{- with .cell }}{{ $refs = $refs | append (printf `<a href="#cell-%s">Atlas: %s</a>` . (index $labels . | htmlEscape)) }}{{ end }}
+            <p class="problem-refs">{{ delimit $refs " · " | safeHTML }}</p>
+          </li>
+          {{- else }}
+          <li class="problem problem--none"><p class="problem-head"><span class="verdict verdict--valid">{{ index $icons "valid" | safeHTML }}Canonical</span> No problems. Every line is canonical.</p></li>
+          {{- end }}
+        </ol>
+      </div>
+      <div class="checker-preview">
+        <h3 class="checker-h">As an app might show it</h3>
+        <ul class="preview" role="list" data-preview>
+          {{- range $ex.preview }}
+          {{- if eq .kind "title" }}
+          <li class="pv pv--title">{{ .text }}</li>
+          {{- else if eq .kind "heading" }}
+          <li class="pv pv--heading">{{ .text }}</li>
+          {{- else if eq .kind "sep" }}
+          <li class="pv pv--sep">Archive</li>
+          {{- else if eq .kind "note" }}
+          <li class="pv pv--note pv-d{{ .depth }}">{{ .text }}</li>
+          {{- else }}
+          <li class="pv pv--task pv--{{ .state }} pv-d{{ .depth }}"><span class="pv-row"><span class="pv-box" aria-hidden="true">{{ index $box .state | safeHTML }}</span><span class="pv-title">{{ .text }}</span> <span class="pv-state">{{ .state }}</span></span>{{ with .meta }}<span class="pv-meta">{{ delimit . " · " }}</span>{{ end }}{{ with .inherited }}<span class="pv-inh">inherits {{ delimit . " · " }}</span>{{ end }}</li>
+          {{- end }}
+          {{- else }}
+          <li class="pv pv--empty">Nothing to show yet.</li>
+          {{- end }}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h2 id="see-also">See also</h2>
+  <aside class="marginnote"><p><span class="note-label">For implementers.</span> Every cell is a small test: its snippet, its verdict and the rules it rests on.</p></aside>
+  <ul class="page-list">
+    {{- with $guide }}
+    <li><a href="{{ .RelPermalink }}"><span class="pl-title">{{ .Title }}</span>{{ with .Params.summary }}<span class="pl-sum">{{ . }}</span>{{ end }}</a></li>
+    {{- end }}
+    <li><a href="{{ $s }}"><span class="pl-title">Specification <span class="mono">{{ $spec.Params.version }}</span></span><span class="pl-sum">The normative text. Every rule cited here links to it.</span></a></li>
+    {{- with .OutputFormats.Get "Markdown" }}
+    <li><a href="{{ .RelPermalink }}"><span class="pl-title">This page as Markdown</span><span class="pl-sum">The atlas as one table per kind of line, with links to every rule.</span></a></li>
+    {{- end }}
+  </ul>
+</article>
+{{ end }}
+
+{{ define "scripts" }}<script src="{{ "js/tasks.js" | relURL }}" defer></script>{{ end }}
+
+{{- define "tasks-atlas-cell" -}}
+{{- /* One atlas cell: (dict "c" cell "id" cell-id "verdict" v "word" w "label" text "ctx" (dict s icons kinds hits)) */ -}}
+{{- $c := .c -}}
+{{- $x := .ctx -}}
+{{- if $c.empty -}}
+<td class="cell cell--empty" id="cell-{{ .id }}"><div class="cell-in"><p class="cell-empty"><span class="vh">{{ .word }}: </span>{{ $c.empty }}</p></div></td>
+{{- else -}}
+{{- $hit := index $x.hits .id -}}
+<td class="cell cell--{{ .verdict }}{{ if $hit }} is-hit{{ end }}" id="cell-{{ .id }}" data-cell="{{ .id }}" data-label="{{ .label }}">
+  <div class="cell-in">
+    <p class="cell-top"><span class="verdict verdict--{{ .verdict }}">{{ index $x.icons .verdict | safeHTML }}{{ .word }}</span><span class="cell-hit" data-hit{{ if not $hit }} hidden{{ end }}>{{ with $hit }}Your file: {{ if eq (len .) 1 }}line{{ else }}lines{{ end }} {{ delimit . ", " }}{{ end }}</span></p>
+    <pre class="cell-snippet"><code>{{ range $j, $ln := $c.lines }}{{ if $j }}{{ "\n" }}{{ end }}{{ with $ln.segs }}{{ range . }}<span class="{{ index $x.kinds .k }}">{{ .t }}</span>{{ end }}{{ else }}<span class="{{ index $x.kinds $ln.k }}">{{ $ln.t }}</span>{{ end }}{{ end }}</code></pre>
+    <p class="cell-reason">{{ $c.reason | htmlEscape | replaceRE "`([^`]+)`" "<code>$1</code>" | safeHTML }}</p>
+    <p class="cell-refs">{{ range $c.rules }}<a class="rid" href="{{ $x.s }}#{{ . }}">{{ . }}</a> {{ end }}{{ range $c.sections }}<a class="rid" href="{{ $x.s }}#section-{{ . }}">§{{ . }}</a> {{ end }}</p>
+  </div>
+</td>
+{{- end -}}
+{{- end -}}

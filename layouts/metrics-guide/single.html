@@ -1,0 +1,663 @@
+{{- /* The Plaintext Metrics companion.
+       Prose lives in the page's Markdown; figures are built here from data/metrics/*.yaml and the published
+       example files. The Markdown marks where things go:
+         <!-- fig:NAME -->            a figure, on a line of its own
+         <!--stat:METRIC:STAT-->      a number from the month's example data (days, records, month, low, high, first, last)
+         <!--spark:METRIC-->          a word-sized chart of that metric
+         <!--day:METRIC:COMBINE-->    one combine applied to that metric's values on the chosen day
+         <!--run:minutes-->, <!--run:distance-->, <!--verdict:valid|invalid|tolerated-->
+       ```jsonl, ```diff and ```sh blocks are coloured by field role, and so is `field` in running text. */ -}}
+
+{{ define "head" }}
+{{- $css := resources.Get "css/metrics.scss" | toCSS | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+{{ end }}
+
+{{ define "main" }}
+{{- $d := (partial "data.html" .).metrics -}}
+{{- $fields := $d.roles.fields -}}
+{{- $ver := .Params.describes | default "0.2.0" -}}
+{{- $spec := printf "/metrics/v%s/" $ver | relURL -}}
+{{- $exDir := printf "static/metrics/v%s/examples/" $ver -}}
+{{- $exURL := printf "%sexamples/" $spec -}}
+{{- $norm := `T(\d\d:\d\d)(Z|[+-])` -}}
+{{- /* One top-level "key":value pair of a compact JSON line. */ -}}
+{{- $pairRE := `"(?:[^"\\]|\\.)*":(?:"(?:[^"\\]|\\.)*"|-?[0-9][0-9.eE+-]*|true|false|null|\[(?:[^\[\]"]|"(?:[^"\\]|\\.)*")*\]|\{(?:[^{}"\[\]]|"(?:[^"\\]|\\.)*"|\[(?:[^\[\]"]|"(?:[^"\\]|\\.)*")*\])*\})` -}}
+{{- $reserved := slice "format" "set" "by" "define" "v" "kind" "unit" "min" "max" "name" "about" "combine" "labels" "levels" "metrics" "parts" "was" "at" "until" "date" "metric" "event" "value" "lat" "lon" "note" "of" "ref" "id" "meta" -}}
+
+{{- /* ---------- Verdict badges: always a mark and a word ---------- */ -}}
+{{- $paths := dict "check" `<path d="M2.5 7.5l3 3 6-7"/>` "cross" `<path d="M3 3l8 8M11 3l-8 8"/>` "wave" `<path d="M1.5 8.5c1.5-3 3-3 4.5 0s3 3 4.5 0 2-2.2 2.5-1.5"/>` "dash" `<path d="M3 7h8"/>` -}}
+{{- $badge := dict -}}
+{{- range slice (slice "valid" "valid" "check" "Valid") (slice "invalid" "invalid" "cross" "Invalid") (slice "tolerated" "tolerated" "wave" "Tolerated") (slice "ok" "valid" "check" "OK") (slice "error" "invalid" "cross" "Error") (slice "warning" "tolerated" "wave" "Warning") (slice "skip" "open" "dash" "Not run") -}}
+  {{- $badge = merge $badge (dict (index . 0) (printf `<span class="verdict verdict--%s"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">%s</svg>%s</span>` (index . 1) (index $paths (index . 2)) (index . 3))) -}}
+{{- end -}}
+{{- $levels := dict -}}
+{{- range $d.checks }}{{ $levels = merge $levels (dict .name .level) }}{{ end -}}
+
+{{- /* ---------- The month: every number comes from the example lines ---------- */ -}}
+{{- $m := $d.month -}}
+{{- $V := newScratch -}}
+{{- $mdefs := dict -}}
+{{- $mdefLines := slice -}}
+{{- $dayLines := slice -}}
+{{- range $line := $m.lines -}}
+  {{- $o := transform.Unmarshal $line -}}
+  {{- if isset $o "define" -}}
+    {{- $mdefs = merge $mdefs (dict $o.define $o) -}}
+    {{- $mdefLines = $mdefLines | append $line -}}
+  {{- else if isset $o "metric" -}}
+    {{- $day := "" -}}
+    {{- with $o.date }}{{ $day = . }}{{ else }}{{ $day = substr $o.at 0 10 }}{{ end -}}
+    {{- $t := 0 -}}
+    {{- with $o.at }}{{ $t = (time (replaceRE $norm "T${1}:00${2}" .)).Unix }}{{ end -}}
+    {{- $x := dict "v" $o.value "t" $t -}}
+    {{- $V.Add (printf "%s|%s" $o.metric $day) (slice $x) -}}
+    {{- $V.Add (printf "%s|all" $o.metric) (slice $x) -}}
+    {{- if eq $day $m.day }}{{ $dayLines = $dayLines | append $line }}{{ end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* How each metric combines: its definition's combine, or the default of M-38. */ -}}
+{{- $how := dict -}}
+{{- $digits := dict -}}
+{{- range $m.metrics -}}
+  {{- $def := index $mdefs .name -}}
+  {{- if not $def }}{{ warnf "metrics guide: %s has no definition in month.yaml" .name }}{{ end -}}
+  {{- $c := $def.combine | default (cond (in (slice "count" "flag") $def.kind) "sum" "mean") -}}
+  {{- $how = merge $how (dict .name $c) -}}
+  {{- $digits = merge $digits (dict .name .digits) -}}
+{{- end -}}
+
+{{- /* Combine jobs: every metric on every day, over the month, and five ways on the chosen day. */ -}}
+{{- $jobs := slice -}}
+{{- range $m.metrics -}}
+  {{- $name := .name -}}
+  {{- range $i := seq $m.days -}}
+    {{- $k := printf "%s|%s-%02d" $name $m.month $i -}}
+    {{- with $V.Get $k }}{{ $jobs = $jobs | append (dict "id" $k "vals" . "how" (index $how $name) "digits" (index $digits $name)) }}{{ end -}}
+  {{- end -}}
+  {{- $jobs = $jobs | append (dict "id" (printf "%s|month" $name) "vals" ($V.Get (printf "%s|all" $name)) "how" (index $how $name) "digits" (index $digits $name)) -}}
+{{- end -}}
+{{- range $m.fiveWays -}}
+  {{- $name := . -}}
+  {{- range slice "sum" "mean" "min" "max" "last" -}}
+    {{- $jobs = $jobs | append (dict "id" (printf "five|%s|%s" $name .) "vals" ($V.Get (printf "%s|%s" $name $m.day)) "how" . "digits" (index $digits $name)) -}}
+  {{- end -}}
+{{- end -}}
+{{- $R := newScratch -}}
+{{- range $jobs -}}
+  {{- $sum := 0.0 }}{{ $lo := 0.0 }}{{ $hi := 0.0 }}{{ $last := 0.0 }}{{ $lastT := 0 -}}
+  {{- range $i, $x := .vals -}}
+    {{- $sum = add $sum $x.v -}}
+    {{- if or (eq $i 0) (lt $x.v $lo) }}{{ $lo = $x.v }}{{ end -}}
+    {{- if or (eq $i 0) (gt $x.v $hi) }}{{ $hi = $x.v }}{{ end -}}
+    {{- if or (eq $i 0) (ge $x.t $lastT) }}{{ $lastT = $x.t }}{{ $last = $x.v }}{{ end -}}
+  {{- end -}}
+  {{- $r := $sum -}}
+  {{- if eq .how "mean" }}{{ $r = div $sum (float (len .vals)) }}{{ else if eq .how "min" }}{{ $r = $lo }}{{ else if eq .how "max" }}{{ $r = $hi }}{{ else if eq .how "last" }}{{ $r = $last }}{{ end -}}
+  {{- $R.Set .id $r -}}
+  {{- $R.Set (printf "%s#" .id) (cond (and (eq .digits 0) (eq (math.Round $r) $r)) (lang.FormatNumber 0 $r) (lang.FormatNumber 1 $r)) -}}
+{{- end -}}
+
+{{- /* Daily series and summary numbers per metric. */ -}}
+{{- $M := newScratch -}}
+{{- $series := dict -}}
+{{- range $mm := $m.metrics -}}
+  {{- $name := .name -}}
+  {{- $daily := slice }}{{ $days := 0 }}{{ $lo := 0.0 }}{{ $hi := 0.0 }}{{ $loK := "" }}{{ $hiK := "" }}{{ $firstK := "" }}{{ $lastK := "" -}}
+  {{- range $i := seq $m.days -}}
+    {{- $k := printf "%s|%s-%02d" $name $m.month $i -}}
+    {{- if $V.Get $k -}}
+      {{- $v := $R.Get $k -}}
+      {{- if or (eq $days 0) (lt $v $lo) }}{{ $lo = $v }}{{ $loK = $k }}{{ end -}}
+      {{- if or (eq $days 0) (gt $v $hi) }}{{ $hi = $v }}{{ $hiK = $k }}{{ end -}}
+      {{- if eq $days 0 }}{{ $firstK = $k }}{{ end -}}
+      {{- $lastK = $k }}{{ $days = add $days 1 -}}
+      {{- $daily = $daily | append (dict "d" $i "has" true "v" $v) -}}
+    {{- else -}}
+      {{- $daily = $daily | append (dict "d" $i "has" false "v" 0.0) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $records := len ($V.Get (printf "%s|all" $name)) -}}
+  {{- $s := dict "name" $name "label" .label "unit" .unit "chart" .chart "daily" $daily "days" $days "records" $records "lo" $lo "hi" $hi
+        "month" ($R.Get (printf "%s|month#" $name)) "low" ($R.Get (printf "%s#" $loK)) "high" ($R.Get (printf "%s#" $hiK))
+        "first" ($R.Get (printf "%s#" $firstK)) "last" ($R.Get (printf "%s#" $lastK)) "how" (index $how $name) "def" (index $mdefs $name) -}}
+  {{- $series = merge $series (dict $name $s) -}}
+  {{- range slice "days" "records" "month" "low" "high" "first" "last" -}}
+    {{- $M.Set (printf "<!--stat:%s:%s-->" $name .) (printf "%v" (index $s .)) -}}
+  {{- end -}}
+  {{- /* Word-sized charts: one size for prose, one for the table. */ -}}
+  {{- $aria := printf "%s per day (%s), 1 to %d %s. Example data." .label (index $how $name) $m.days $m.monthLabel -}}
+  {{- range $sz := slice (dict "k" "s" "bw" 2 "step" 3 "h" 14) (dict "k" "m" "bw" 3 "step" 4 "h" 18) -}}
+    {{- $w := sub (mul $m.days $sz.step) (sub $sz.step $sz.bw) -}}
+    {{- $marks := "" -}}
+    {{- if eq $mm.chart "line" -}}
+      {{- $pts := slice }}{{ $lx := 0.0 }}{{ $ly := 0.0 -}}
+      {{- range $daily -}}{{- if .has -}}
+        {{- $lx = add (mul (sub .d 1) $sz.step) (div (float $sz.bw) 2) -}}
+        {{- $ly = add 1.5 (mul (sub 1 (div (sub .v $lo) (math.Max 0.001 (sub $hi $lo)))) (sub $sz.h 3)) -}}
+        {{- $pts = $pts | append (printf "%.1f,%.1f" $lx $ly) -}}
+      {{- end -}}{{- end -}}
+      {{- $marks = printf `<polyline points="%s"/><circle cx="%.1f" cy="%.1f" r="1.8"/>` (delimit $pts " ") $lx $ly -}}
+    {{- else -}}
+      {{- range $daily -}}{{- if .has -}}
+        {{- $bh := math.Max 1 (mul (div .v (math.Max 0.001 $hi)) $sz.h) -}}
+        {{- $marks = printf `%s<rect x="%d" y="%.1f" width="%d" height="%.1f"/>` $marks (mul (sub .d 1) $sz.step) (sub $sz.h $bh) $sz.bw $bh -}}
+      {{- end -}}{{- end -}}
+    {{- end -}}
+    {{- $M.Set (printf "spark|%s|%s" $sz.k $name) (printf `<svg class="m-spark m-spark--%s" width="%d" height="%d" viewBox="0 0 %d %d" role="img" aria-label="%s">%s</svg>` $mm.chart $w $sz.h $w $sz.h $aria $marks) -}}
+  {{- end -}}
+  {{- $M.Set (printf "<!--spark:%s-->" $name) ($M.Get (printf "spark|s|%s" $name)) -}}
+{{- end -}}
+{{- $M.Set "<!--stat:file:lines-->" (printf "%d" (len $m.lines)) -}}
+{{- $M.Set "<!--stat:file:dayLabel-->" $m.dayLabel -}}
+{{- range $m.fiveWays -}}
+  {{- $name := . -}}
+  {{- range slice "sum" "mean" "min" "max" "last" }}{{ $M.Set (printf "<!--day:%s:%s-->" $name .) ($R.Get (printf "five|%s|%s#" $name .)) }}{{ end -}}
+{{- end -}}
+{{- range slice "valid" "invalid" "tolerated" }}{{ $M.Set (printf "<!--verdict:%s-->" .) (index $badge .) }}{{ end -}}
+
+{{- /* ---------- The run ---------- */ -}}
+{{- $run := $d.run -}}
+{{- $runDefs := dict }}{{ $ev := dict }}{{ $members := slice -}}
+{{- range $run.lines -}}
+  {{- $o := transform.Unmarshal . -}}
+  {{- if isset $o "define" }}{{ $runDefs = merge $runDefs (dict $o.define $o) }}{{ end -}}
+  {{- if isset $o "event" }}{{ $ev = $o }}{{ end -}}
+{{- end -}}
+{{- $t0 := time (replaceRE $norm "T${1}:00${2}" $ev.at) -}}
+{{- $runMin := ((time (replaceRE $norm "T${1}:00${2}" $ev.until)).Sub $t0).Minutes -}}
+{{- $runDist := 0.0 -}}
+{{- range $run.lines -}}
+  {{- $o := transform.Unmarshal . -}}
+  {{- if and (isset $o "metric") (eq $o.of $ev.id) -}}
+    {{- $a := ((time (replaceRE $norm "T${1}:00${2}" $o.at)).Sub $t0).Minutes -}}
+    {{- $b := $a -}}
+    {{- with $o.until }}{{ $b = ((time (replaceRE $norm "T${1}:00${2}" .)).Sub $t0).Minutes }}{{ end -}}
+    {{- $label := "" -}}
+    {{- range $k, $v := $o }}{{ if not (in $reserved $k) }}{{ $label = $v }}{{ end }}{{ end -}}
+    {{- $members = $members | append (dict "metric" $o.metric "value" $o.value "label" $label "left" (div (mul $a 100) $runMin) "width" (div (mul (sub $b $a) 100) $runMin) "unit" (index $runDefs $o.metric).unit "how" (index $runDefs $o.metric).combine) -}}
+    {{- if eq $o.metric "distance" }}{{ $runDist = add $runDist $o.value }}{{ end -}}
+  {{- end -}}
+{{- end -}}
+{{- $M.Set "<!--run:minutes-->" (printf "%.0f" $runMin) -}}
+{{- $M.Set "<!--run:distance-->" (lang.FormatNumber 1 $runDist) -}}
+
+{{- /* ---------- Example files, read as published ---------- */ -}}
+{{- $files := dict -}}
+{{- range $d.cases }}{{ $files = merge $files (dict .file (os.ReadFile (printf "%s%s.metrics" $exDir .file))) }}{{ end -}}
+
+{{- /* ---------- The builder's opening state ---------- */ -}}
+{{- $b := $d.builder -}}
+{{- $bex := index (where $b.examples "key" $b.default) 0 -}}
+{{- $bpre := index (where $b.presets "key" $bex.preset) 0 -}}
+{{- $bHeader := printf `{"format":"plaintext-metrics/%s","set":"%s"}` $ver $b.set -}}
+
+{{- /* ---------- Colour every JSON line once ---------- */ -}}
+{{- $html := string .Content -}}
+{{- $codeRE := `(?s)<pre><code class="language-(?:jsonl|diff|sh)">.*?</code></pre>` -}}
+{{- $raw := slice $d.line.line $bHeader $bpre.line $bex.record -}}
+{{- range slice $d.file.lines $run.lines $mdefLines $dayLines }}{{ range . }}{{ $raw = $raw | append . }}{{ end }}{{ end -}}
+{{- range $c := $d.cases -}}
+  {{- $ls := split (strings.TrimSuffix "\n" (index $files $c.file)) "\n" -}}
+  {{- range $c.lines }}{{ $raw = $raw | append (index $ls (sub .n 1)) }}{{ end -}}
+{{- end -}}
+{{- range findRE $codeRE $html -}}
+  {{- $lang := index (index (findRESubmatch `language-([a-z]+)` . 1) 0) 1 -}}
+  {{- range split (strings.TrimSuffix "\n" (replaceRE `(?s)^<pre><code class="language-[a-z]+">(.*)</code></pre>$` "$1" .)) "\n" -}}
+    {{- $l := htmlUnescape . -}}
+    {{- if eq $lang "jsonl" }}{{ $raw = $raw | append $l -}}
+    {{- else if eq $lang "diff" }}{{ if findRE `^[-+] \{` $l }}{{ $raw = $raw | append (substr $l 2) }}{{ end -}}
+    {{- else }}{{ range findRESubmatch `'(\{.*\})'` $l }}{{ $raw = $raw | append (index . 1) }}{{ end }}{{ end -}}
+  {{- end -}}
+{{- end -}}
+{{- $C := newScratch -}}
+{{- range $raw -}}
+  {{- if not ($C.Get .) -}}
+    {{- $pairs := findRE $pairRE . -}}
+    {{- $h := htmlEscape . -}}
+    {{- if and $pairs (eq (printf "{%s}" (delimit $pairs ",")) .) -}}
+      {{- $h = `<span class="j-p">{</span>` -}}
+      {{- range $i, $p := $pairs -}}
+        {{- $k := index (index (findRESubmatch `^"((?:[^"\\]|\\.)*)":` $p 1) 0) 1 -}}
+        {{- if $i }}{{ $h = printf `%s<span class="j-p">,</span>` $h }}{{ end -}}
+        {{- $h = printf `%s<span class="f-%s">%s</span>` $h (index $fields $k | default "annot") (htmlEscape $p) -}}
+      {{- end -}}
+      {{- $h = printf `%s<span class="j-p">}</span>` $h -}}
+    {{- end -}}
+    {{- $C.Set . $h -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* ---------- The page's own Markdown: code, field names, inline numbers and charts ---------- */ -}}
+{{- range findRE $codeRE $html -}}
+  {{- $block := . -}}
+  {{- $lang := index (index (findRESubmatch `language-([a-z]+)` . 1) 0) 1 -}}
+  {{- $out := slice -}}
+  {{- range split (strings.TrimSuffix "\n" (replaceRE `(?s)^<pre><code class="language-[a-z]+">(.*)</code></pre>$` "$1" .)) "\n" -}}
+    {{- $l := htmlUnescape . -}}
+    {{- if eq $lang "jsonl" -}}
+      {{- $out = $out | append ($C.Get $l | default (htmlEscape $l)) -}}
+    {{- else if eq $lang "diff" -}}
+      {{- if findRE `^[-+] \{` $l -}}
+        {{- $del := eq (substr $l 0 1) "-" -}}
+        {{- $out = $out | append (printf `<span class="dl dl--%s"><span class="dl-sign" aria-hidden="true">%s</span><span class="vh">%s</span>%s</span>` (cond $del "del" "ins") (substr $l 0 1) (cond $del "Remove: " "Add: ") ($C.Get (substr $l 2))) -}}
+      {{- else }}{{ $out = $out | append (printf `<span class="dl">%s</span>` (htmlEscape $l)) }}{{ end -}}
+    {{- else if hasPrefix (trim $l " ") "#" -}}
+      {{- $out = $out | append (printf `<span class="sh-c">%s</span>` (htmlEscape $l)) -}}
+    {{- else -}}
+      {{- $e := htmlEscape $l -}}
+      {{- range findRESubmatch `'(\{.*\})'` $l }}{{ $e = replace $e (htmlEscape (index . 1)) ($C.Get (index . 1)) }}{{ end -}}
+      {{- $out = $out | append $e -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $html = replace $html $block (printf `<pre class="m-code m-code--%s"><code>%s</code></pre>` $lang (delimit $out (cond (eq $lang "diff") "" "\n"))) -}}
+{{- end -}}
+{{- range $k, $role := $fields -}}
+  {{- $html = replace $html (printf "<code>%s</code>" $k) (printf `<code class="f-%s">%s</code>` $role $k) -}}
+{{- end -}}
+{{- range $k, $v := $M.Values -}}
+  {{- if hasPrefix $k "<!--" }}{{ $html = replace $html $k $v }}{{ end -}}
+{{- end -}}
+{{- range findRE `<!--(?:stat|spark|day|run|verdict):[^>]*-->` $html }}{{ warnf "metrics guide: no value for the marker %s" . }}{{ end -}}
+
+{{- /* ---------- Title block ---------- */ -}}
+{{- $note := printf `<p><span class="note-label">A guide, not the rules.</span> It describes Plaintext Metrics <a class="mono" href="%s">%s</a>. Where the two differ, the specification is right.</p>` $spec $ver -}}
+{{- with .OutputFormats.Get "Markdown" }}{{ $note = printf `%s<p>Markdown: <a class="mono m-small" href="%s">%s</a></p>` $note .RelPermalink .RelPermalink }}{{ end -}}
+{{- $note = printf `%s<p>Example files: <a class="mono m-small" href="%sREADME.md">%s</a></p>` $note $exURL $exURL -}}
+
+<article class="prose metrics-guide">
+  {{ partial "title-block.html" (dict "p" . "note" ($note | safeHTML)) }}
+
+  {{- range split (replaceRE `<!--\s*fig:([a-z-]+)\s*-->` "\x1eFIG:$1\x1e" $html) "\x1e" -}}
+  {{- if not (hasPrefix . "FIG:") }}{{ . | safeHTML }}{{ else }}{{ $fig := strings.TrimPrefix "FIG:" . -}}
+
+  {{- if eq $fig "line" -}}
+  {{- $pairs := findRE $pairRE $d.line.line -}}
+  <figure class="fullwidth m-fig m-explode" id="fig-line" aria-labelledby="fig-line-cap">
+    <div class="m-segs">
+      {{- range $i, $p := $pairs -}}
+      {{- $k := index (index (findRESubmatch `^"([^"]*)":` $p 1) 0) 1 -}}
+      {{- $f := index $d.line.fields $k -}}
+      {{- $role := index $fields $k | default "annot" }}
+      <div class="m-seg r-{{ $role }}">
+        <span class="m-seg-says">{{ $f.says }}</span>
+        <span class="m-seg-needs">{{ $f.needs }}</span>
+        <span class="m-seg-lead" aria-hidden="true"></span>
+        <code class="m-seg-code">{{ if eq $i 0 }}<span class="j-p">{</span>{{ end }}<span class="f-{{ $role }}">{{ $p }}</span><span class="j-p">{{ if eq (add $i 1) (len $pairs) }}}{{ else }},{{ end }}</span></code>
+      </div>
+      {{- end }}
+    </div>
+    <pre class="m-code m-code--whole" aria-label="The same record as one line"><code>{{ $C.Get $d.line.line | safeHTML }}</code></pre>
+    <figcaption class="cap" id="fig-line-cap">Fig. 1. One record taken apart, each field labelled with what it says and whether it is required. Below, the same record as it sits in the file.</figcaption>
+  </figure>
+
+  {{- else if eq $fig "file" -}}
+  {{- $keys := dict }}{{ $letters := split "ABCDEFGHIJ" "" }}{{ $nd := 0 -}}
+  {{- range $d.file.lines }}{{ $o := transform.Unmarshal . }}{{ if isset $o "define" }}{{ $keys = merge $keys (dict (printf "%s|%v" $o.define $o.v) (index $letters $nd)) }}{{ $nd = add $nd 1 }}{{ end }}{{ end }}
+  <figure class="fullwidth m-fig" id="fig-file" aria-labelledby="fig-file-cap">
+    <div class="table-wrap">
+      <table class="m-file">
+        <caption class="vh">The lines of {{ $d.file.file }}, with each record's definition</caption>
+        <thead><tr><th scope="col" class="num">Line</th><th scope="col">Type</th><th scope="col">Definition</th><th scope="col">{{ $d.file.file }}</th></tr></thead>
+        <tbody>
+          {{- range $i, $l := $d.file.lines }}
+          {{- $o := transform.Unmarshal $l }}
+          {{- $n := add $i 1 }}
+          {{- $type := cond (isset $o "format") "header" (cond (isset $o "define") "definition" (cond (isset $o "event") "event" "record")) }}
+          <tr class="m-file-{{ $type }}">
+            <td class="num m-ln">{{ $n }}</td>
+            <td class="m-type">{{ $type }}</td>
+            <td class="m-key">
+              {{- if eq $type "definition" }}<span class="m-keybox" title="{{ $o.define }} v{{ $o.v }}">{{ index $keys (printf "%s|%v" $o.define $o.v) }}</span>
+              {{- else if eq $type "record" }}{{ with index $keys (printf "%s|%v" $o.metric $o.v) }}<span class="m-cites">cites <span class="m-keybox">{{ . }}</span></span>{{ else }}{{ warnf "metrics guide: file.yaml line %d cites no definition" $n }}{{ end }}{{ end -}}
+            </td>
+            <td class="m-line"><code>{{ $C.Get $l | safeHTML }}</code>{{ with index $d.file.notes (string $n) }}<span class="m-line-note">{{ . }}</span>{{ end }}</td>
+          </tr>
+          {{- end }}
+        </tbody>
+      </table>
+    </div>
+    <figcaption class="cap" id="fig-file-cap">Fig. 2. A file of nine lines. Each definition has a letter; each record names its definition by <code class="f-what">metric</code> and <code class="f-what">v</code>, and the letter shows which one that is. Nothing points at a line by its position.</figcaption>
+  </figure>
+
+  {{- else if eq $fig "versions" -}}
+  {{- $vd := dict }}{{ $lo := 0.0 }}{{ $hi := 0.0 }}{{ $first := true -}}
+  {{- range $d.file.lines }}{{ $o := transform.Unmarshal . }}{{ if eq $o.define $d.file.versions }}{{ $vd = merge $vd (dict (printf "%v" $o.v) $o) }}{{ if or $first (lt $o.min $lo) }}{{ $lo = $o.min }}{{ end }}{{ if or $first (gt $o.max $hi) }}{{ $hi = $o.max }}{{ end }}{{ $first = false }}{{ end }}{{ end }}
+  <figure class="fullwidth m-fig" id="fig-versions" aria-labelledby="fig-versions-cap">
+    <div class="table-wrap">
+      <table class="booktabs m-versions">
+        <caption class="vh">Each {{ $d.file.versions }} record against the bounds of the version it cites</caption>
+        <thead><tr><th scope="col" class="num">Line</th><th scope="col">date</th><th scope="col">Cites</th><th scope="col">Value on its own version's scale, drawn from {{ $lo }} to {{ $hi }}</th><th scope="col">Read as</th></tr></thead>
+        <tbody>
+          {{- range $i, $l := $d.file.lines }}
+          {{- $o := transform.Unmarshal $l }}
+          {{- if eq $o.metric $d.file.versions }}
+          {{- $def := index $vd (printf "%v" $o.v) }}
+          {{- $sx := 200.0 }}
+          {{- $x0 := add 6 (mul (div (sub $def.min $lo) (sub $hi $lo)) $sx) }}{{ $x1 := add 6 (mul (div (sub $def.max $lo) (sub $hi $lo)) $sx) }}{{ $xv := add 6 (mul (div (sub $o.value $lo) (sub $hi $lo)) $sx) }}
+          <tr>
+            <td class="num m-ln">{{ add $i 1 }}</td>
+            <td class="mono m-small">{{ $o.date }}</td>
+            <td><code class="f-what">v{{ $o.v }}</code></td>
+            <td><svg class="m-strip" width="212" height="18" viewBox="0 0 212 18" role="img" aria-label="{{ $o.value }} on a scale from {{ $def.min }} to {{ $def.max }}"><line class="m-strip-axis" x1="6" y1="9" x2="206" y2="9"/><rect class="m-strip-range" x="{{ printf "%.1f" $x0 }}" y="4" width="{{ printf "%.1f" (sub $x1 $x0) }}" height="10"/><circle class="m-strip-dot" cx="{{ printf "%.1f" $xv }}" cy="9" r="4.5"/></svg></td>
+            <td><span class="f-measure">{{ $o.value }} of {{ $def.min }}–{{ $def.max }}</span>{{ with index $d.file.notes (string (add $i 1)) }} <span class="m-line-note">{{ . }}</span>{{ end }}</td>
+          </tr>
+          {{- end }}
+          {{- end }}
+        </tbody>
+      </table>
+    </div>
+    <figcaption class="cap" id="fig-versions-cap">Fig. 3. The <code class="f-what">{{ $d.file.versions }}</code> records of Fig. 2, each drawn against the bounds of the version it cites, on one common scale. The shaded band is the version's range; the dot is the value.</figcaption>
+  </figure>
+
+  {{- else if eq $fig "multiples" -}}
+  {{- $top := 0.0 }}{{ range $m.multiples }}{{ $top = math.Max $top (index $series .).hi }}{{ end }}{{ $top = mul (math.Ceil (div $top 30)) 30 -}}
+  <figure class="fullwidth m-fig" id="fig-multiples" aria-labelledby="fig-multiples-cap">
+    <div class="m-multiples">
+      {{- range $m.multiples }}
+      {{- $s := index $series . }}
+      <div class="m-panel">
+        <p class="m-panel-head"><code class="f-what">{{ $s.name }}</code> <span class="m-panel-unit"><span class="f-measure">{{ $s.def.unit }}</span> per day, <code class="f-measure">{{ $s.how }}</code></span></p>
+        <div class="m-panel-plot">
+          <div class="m-axis" aria-hidden="true"><span>{{ $top }}</span><span>{{ div $top 2 }}</span><span>0</span></div>
+          <svg class="m-bars" viewBox="0 0 {{ mul $m.days 10 }} 100" preserveAspectRatio="none" role="img" aria-label="{{ $s.label }} per day, 1 to {{ $m.days }} {{ $m.monthLabel }}, on a scale from 0 to {{ $top }} minutes. Example data.">
+            <line class="m-grid" x1="0" y1="50" x2="{{ mul $m.days 10 }}" y2="50"/>
+            {{- range $s.daily }}{{ if .has }}{{ $h := mul (div .v $top) 100 }}<rect x="{{ add (mul (sub .d 1) 10) 1 }}" y="{{ printf "%.1f" (sub 100 $h) }}" width="8" height="{{ printf "%.1f" $h }}"/>{{ end }}{{ end -}}
+          </svg>
+        </div>
+        <div class="m-panel-x" aria-hidden="true"><span>1 {{ $m.monthName }}</span><span>{{ $m.days }} {{ $m.monthName }}</span></div>
+        <p class="m-panel-cap">{{ $s.records }} records on {{ $s.days }} days. Total <span class="f-measure">{{ $s.month }} {{ $s.def.unit }}</span>.</p>
+      </div>
+      {{- end }}
+    </div>
+    <figcaption class="cap" id="fig-multiples-cap">Fig. 4. Minutes per day for three metrics, {{ $m.monthLabel }}, drawn at one scale from 0 to {{ $top }}. Each bar is one day's values combined by the definition's <code class="f-measure">combine</code>. Example data.</figcaption>
+  </figure>
+
+  {{- else if eq $fig "month-table" -}}
+  <div class="table-wrap fullwidth m-fig" id="table-month">
+    <table class="booktabs m-month">
+      <caption class="cap">Table 1. The month in one table. A record is one line; a day counts if it has at least one record. The chart and the low and high are per day, after <code class="f-measure">combine</code>. Example data.</caption>
+      <thead><tr><th scope="col">Metric</th><th scope="col">Kind</th><th scope="col">Unit</th><th scope="col">Combine</th><th scope="col" class="num">Records</th><th scope="col" class="num">Days</th><th scope="col">1–{{ $m.days }} {{ $m.monthName }}</th><th scope="col" class="num">{{ $m.monthName }}</th><th scope="col" class="num">Daily low–high</th></tr></thead>
+      <tbody>
+        {{- range $m.metrics }}
+        {{- $s := index $series .name }}
+        <tr>
+          <th scope="row"><code class="f-what">{{ $s.name }}</code></th>
+          <td><code class="f-measure">{{ $s.def.kind }}</code></td>
+          <td>{{ with $s.def.unit }}<code class="f-measure">{{ . }}</code>{{ else }}<span class="m-none">none</span>{{ end }}</td>
+          <td><code class="f-measure">{{ $s.how }}</code>{{ if not $s.def.combine }} <span class="m-default">by default</span>{{ end }}</td>
+          <td class="num">{{ $s.records }}</td>
+          <td class="num">{{ $s.days }}</td>
+          <td class="m-spark-cell">{{ $M.Get (printf "spark|m|%s" $s.name) | safeHTML }}</td>
+          <td class="num f-measure">{{ $s.month }}{{ if eq $s.how "mean" }} <span class="m-default">mean</span>{{ end }}</td>
+          <td class="num">{{ $s.low }}–{{ $s.high }}</td>
+        </tr>
+        {{- end }}
+      </tbody>
+    </table>
+  </div>
+
+  {{- else if eq $fig "combine" -}}
+  <figure class="fullwidth m-fig" id="fig-combine" aria-labelledby="fig-combine-cap">
+    <pre class="m-code" aria-label="The records of {{ $m.dayLabel }}"><code>{{ range $i, $l := $dayLines }}{{ if $i }}{{ "\n" }}{{ end }}{{ $C.Get $l | safeHTML }}{{ end }}</code></pre>
+    <div class="m-combine">
+      <div class="table-wrap">
+        <table class="booktabs">
+          <caption class="cap">One number per metric for {{ $m.dayLabel }}, by each definition's <code class="f-measure">combine</code>.</caption>
+          <thead><tr><th scope="col">Metric</th><th scope="col">Combine</th><th scope="col">Values that day</th><th scope="col" class="num">One number</th></tr></thead>
+          <tbody>
+            {{- range $m.metrics }}
+            {{- $name := .name }}{{ $dg := .digits }}
+            {{- $vals := sort ($V.Get (printf "%s|%s" $name $m.day)) "t" }}
+            <tr>
+              <th scope="row"><code class="f-what">{{ $name }}</code></th>
+              <td><code class="f-measure">{{ index $how $name }}</code>{{ if not (index $mdefs $name).combine }} <span class="m-default">by default</span>{{ end }}</td>
+              <td>{{ range $i, $x := $vals }}{{ if $i }}, {{ end }}{{ lang.FormatNumber $dg $x.v }}{{ end }}</td>
+              <td class="num f-measure">{{ $R.Get (printf "%s|%s#" $name $m.day) }} {{ .unit }}</td>
+            </tr>
+            {{- end }}
+          </tbody>
+        </table>
+      </div>
+      <div class="table-wrap">
+        <table class="booktabs m-five">
+          <caption class="cap">The same values, five ways. The definition's choice is marked.</caption>
+          <thead><tr><th scope="col">Combine</th>{{ range $m.fiveWays }}{{ $s := index $series . }}<th scope="col" class="num"><code class="f-what">{{ . }}</code><span class="m-th-sub">{{ range $i, $x := sort ($V.Get (printf "%s|%s" . $m.day)) "t" }}{{ if $i }}, {{ end }}{{ lang.FormatNumber (index $digits $s.name) $x.v }}{{ end }}</span></th>{{ end }}</tr></thead>
+          <tbody>
+            {{- range $c := slice "sum" "mean" "min" "max" "last" }}
+            <tr>
+              <th scope="row"><code class="f-measure">{{ $c }}</code></th>
+              {{- range $m.fiveWays }}
+              {{- $chosen := eq (index $how .) $c }}
+              <td class="num{{ if $chosen }} m-is-chosen{{ end }}">{{ if $chosen }}<span class="m-chosen">chosen</span> {{ end }}{{ $R.Get (printf "five|%s|%s#" . $c) }}</td>
+              {{- end }}
+            </tr>
+            {{- end }}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <figcaption class="cap" id="fig-combine-cap">Fig. 5. {{ $m.dayLabel }} in the example file: its records, the number each definition makes of them, and what the other choices would have made. <code class="f-measure">last</code> takes the latest <code class="f-time">at</code>. Example data.</figcaption>
+  </figure>
+
+  {{- else if eq $fig "event" -}}
+  {{- $groups := slice }}{{ range $members }}{{ if not (in $groups .metric) }}{{ $groups = $groups | append .metric }}{{ end }}{{ end }}
+  <figure class="fullwidth m-fig" id="fig-event" aria-labelledby="fig-event-cap">
+    <div class="m-timeline">
+      <div class="m-tl-row m-tl-event">
+        <div class="m-tl-label"><code class="f-what">{{ $ev.event }}</code> <span class="m-tl-tag">event</span><span class="m-tl-id"><code class="f-time">id</code> {{ $ev.id }}</span></div>
+        <div class="m-tl-track"><div class="m-tl-bar r-time" style="left:0;width:100%"><span class="m-tl-v">{{ printf "%.0f" $runMin }} minutes</span><span class="m-tl-l"><span class="f-annot">{{ $ev.surface }}</span> · <span class="f-annot">{{ $ev.note }}</span></span></div></div>
+      </div>
+      {{- range $g := $groups }}
+      <div class="m-tl-row">
+        <div class="m-tl-label"><code class="f-what">{{ $g }}</code><span class="m-tl-id"><code class="f-annot">of</code> {{ $ev.id }}</span></div>
+        <div class="m-tl-track">
+          {{- range $members }}{{ if eq .metric $g }}
+          <div class="m-tl-bar r-measure" style="left:{{ printf "%.2f" .left }}%;width:{{ printf "%.2f" .width }}%"><span class="m-tl-v">{{ .value }} {{ .unit }}</span>{{ with .label }}<span class="m-tl-l f-annot">{{ . }}</span>{{ end }}</div>
+          {{- end }}{{ end }}
+        </div>
+      </div>
+      {{- end }}
+      <div class="m-tl-row m-tl-axis" aria-hidden="true">
+        <div class="m-tl-label"></div>
+        <div class="m-tl-track">
+          {{- range $run.ticks }}<span style="left:{{ printf "%.2f" (div (mul . 100.0) $runMin) }}%">{{ ($t0.Add (time.ParseDuration (printf "%dm" .))).Format "15:04" }}</span>{{ end -}}
+          <span class="m-tl-end" style="left:100%">{{ ($t0.Add (time.ParseDuration (printf "%.0fm" $runMin))).Format "15:04" }}</span>
+        </div>
+      </div>
+    </div>
+    <pre class="m-code" aria-label="{{ $run.file }}"><code>{{ range $i, $l := $run.lines }}{{ if $i }}{{ "\n" }}{{ end }}{{ $C.Get $l | safeHTML }}{{ end }}</code></pre>
+    <figcaption class="cap" id="fig-event-cap">Fig. 6. One run, {{ substr $ev.at 0 10 }}. The event line spans the whole run; each record sits where its own <code class="f-time">at</code> and <code class="f-time">until</code> put it, and joins the run by naming its <code class="f-time">id</code> in <code class="f-annot">of</code>. The file is below.</figcaption>
+  </figure>
+
+  {{- else if eq $fig "cases" -}}
+  <div class="fullwidth m-fig m-cases" id="fig-cases">
+    {{- range $c := $d.cases }}
+    {{- $ls := split (strings.TrimSuffix "\n" (index $files $c.file)) "\n" }}
+    {{- $err := 0 }}{{ $warn := 0 }}{{ range $c.checks }}{{ if eq (index $levels .) "error" }}{{ $err = add $err 1 }}{{ else }}{{ $warn = add $warn 1 }}{{ end }}{{ end }}
+    {{- $verdict := cond (gt $err 0) "invalid" (cond (gt $warn 0) "tolerated" "valid") }}
+    {{- $title := $c.title | markdownify }}{{ $gist := $c.gist | markdownify }}
+    {{- range $k, $role := $fields }}{{ $title = replace $title (printf "<code>%s</code>" $k) (printf `<code class="f-%s">%s</code>` $role $k) }}{{ $gist = replace $gist (printf "<code>%s</code>" $k) (printf `<code class="f-%s">%s</code>` $role $k) }}{{ end }}
+    <article class="m-case m-case--{{ $verdict }}" id="case-{{ $c.file }}" aria-labelledby="case-{{ $c.file }}-t">
+      <h3 class="m-case-title" id="case-{{ $c.file }}-t">{{ $title | safeHTML }}</h3>
+      <p class="m-case-verdict">{{ index $badge $verdict | safeHTML }}
+        {{- $seen := slice }}{{ range $c.checks }}{{ if not (in $seen .) }}{{ $seen = $seen | append . }}{{ end }}{{ end }}
+        {{- range $seen }}{{ $name := . }}{{ $count := 0 }}{{ range $c.checks }}{{ if eq . $name }}{{ $count = add $count 1 }}{{ end }}{{ end }} <code class="m-check">{{ . }}</code>{{ if gt $count 1 }}<span class="m-times"> ×{{ $count }}</span>{{ end }}{{ end }}
+        {{- if not $c.checks }} <span class="m-none">no problems</span>{{ end -}}
+      </p>
+      <div class="m-snip" role="group" aria-label="Lines from {{ $c.file }}.metrics">
+        {{- $prev := 0 }}
+        {{- range $c.lines }}
+        {{- if and $prev (gt .n (add $prev 1)) }}<div class="m-sl m-sl-gap" aria-hidden="true"><span class="m-ln">⋯</span></div>{{ end }}
+        {{- $prev = .n }}
+        {{- $h := $C.Get (index $ls (sub .n 1)) }}
+        {{- range .mark }}{{ $h = replaceRE (printf `(<span class="f-[a-z]+">&#34;%s&#34;:.*?</span>)` .) (printf `<mark class="m-mark">$1</mark>`) $h }}{{ end }}
+        <div class="m-sl{{ with .level }} m-sl--{{ . }}{{ end }}"><span class="m-ln">{{ .n }}</span><span class="m-lm">{{ with .level }}<span aria-hidden="true">{{ cond (eq . "error") "×" "!" }}</span><span class="vh">{{ . }} on this line: </span>{{ end }}</span><code>{{ $h | safeHTML }}</code></div>
+        {{- end }}
+      </div>
+      <p class="m-case-gist">{{ $gist | safeHTML }}</p>
+      <p class="m-case-meta"><span class="m-rules">{{ range $c.rules }}<a class="mono m-rule" href="{{ $spec }}#{{ . }}">{{ . }}</a> {{ end }}</span><a class="mono m-small" href="{{ $exURL }}{{ $c.file }}.metrics">{{ $c.file }}.metrics</a> <button type="button" class="m-linkbutton" data-load-example="{{ $c.file }}" hidden>Check it</button></p>
+    </article>
+    {{- end }}
+  </div>
+
+  {{- else if eq $fig "checker" -}}
+  {{- $start := "valid" }}
+  {{- $startText := index $files $start }}
+  {{- $nlines := 0 }}{{ range split $startText "\n" }}{{ if trim . " \r\t" }}{{ $nlines = add $nlines 1 }}{{ end }}{{ end }}
+  <div class="m-tool" data-metrics-checker id="checker">
+    <div class="row">
+      <div>
+        <label class="field-label" for="checker-input">A metrics file</label>
+        <textarea id="checker-input" class="code-input m-checker-input" spellcheck="false" autocomplete="off" wrap="off" readonly rows="14" aria-describedby="checker-help">{{ $startText }}</textarea>
+      </div>
+      <aside class="marginnote">
+        <div data-js-only hidden>
+          <label class="field-label" for="checker-example">Load an example</label>
+          <select id="checker-example" class="m-select">
+            {{- range $d.cases }}<option value="{{ .file }}"{{ if eq .file $start }} selected{{ end }}>{{ .file }}.metrics</option>{{ end -}}
+          </select>
+        </div>
+        <p data-no-js>With JavaScript off the file can't be edited here. The result below is for the file shown, <a class="mono m-small" href="{{ $exURL }}{{ $start }}.metrics">{{ $start }}.metrics</a>.</p>
+        <p id="checker-help">Problems are listed by line number in the file. A blank line is ignored, and a line repeated exactly is read once (<a class="mono m-rule" href="{{ $spec }}#M-6">M-6</a>, <a class="mono m-rule" href="{{ $spec }}#M-9">M-9</a>).</p>
+      </aside>
+    </div>
+    <div class="fullwidth m-result">
+      <p class="m-verdict" data-checker-verdict aria-live="polite">{{ index $badge "valid" | safeHTML }} <span class="m-summary">No problems in {{ $nlines }} lines.</span></p>
+      <div class="table-wrap" data-checker-table hidden>
+        <table class="booktabs m-checks">
+          <caption class="vh">Problems the checker found</caption>
+          <thead><tr><th scope="col" class="num">Line</th><th scope="col">Level</th><th scope="col">Check</th><th scope="col">Rule</th><th scope="col">Detail</th></tr></thead>
+          <tbody data-checker-rows></tbody>
+        </table>
+      </div>
+      <ul class="m-notes" data-checker-notes hidden></ul>
+      <details class="m-details">
+        <summary>What the checker reports</summary>
+        <div class="table-wrap">
+          <table class="booktabs m-checks">
+            <caption class="vh">The checks of §10 and the rules this checker cites for each</caption>
+            <thead><tr><th scope="col">Check</th><th scope="col">Level</th><th scope="col">Rules it cites</th><th scope="col">When</th></tr></thead>
+            <tbody>
+              {{- range $d.checks }}
+              <tr><td><code>{{ .name }}</code></td><td>{{ index $badge .level | safeHTML }}</td><td class="m-rules">{{ range .rules }}<a class="mono m-rule" href="{{ $spec }}#{{ . }}">{{ . }}</a> {{ end }}</td><td>{{ .when }}</td></tr>
+              {{- end }}
+            </tbody>
+          </table>
+        </div>
+        <p>It is a port of the reference checker the example files were tested with, and it gives the same results on every one of them. Two warnings carry no rule of their own: an unknown field on a header or a definition line is reported as <code>undeclared_label</code>, which §10 defines for records and events.</p>
+      </details>
+    </div>
+  </div>
+
+  {{- else if eq $fig "builder" -}}
+  {{- $pd := transform.Unmarshal $bpre.line }}{{ $pr := transform.Unmarshal $bex.record }}
+  {{- $plabel := "" }}{{ $pvals := "" }}{{ with $pd.labels }}{{ range $k, $v := . }}{{ if not $plabel }}{{ $plabel = $k }}{{ $pvals = cond (reflect.IsSlice $v) (delimit $v ", ") $v }}{{ end }}{{ end }}{{ end }}
+  {{- $rlabel := "" }}{{ $rvalue := "" }}{{ range $k, $v := $pr }}{{ if not (in $reserved $k) }}{{ $rlabel = $k }}{{ $rvalue = $v }}{{ end }}{{ end }}
+  {{- $val := dict
+        "define" $pd.define "dv" (printf "%v" $pd.v) "kind" $pd.kind "dunit" (cond (reflect.IsSlice $pd.unit) (delimit ($pd.unit | default slice) ", ") ($pd.unit | default ""))
+        "min" (cond (isset $pd "min") (printf "%v" $pd.min) "") "max" (cond (isset $pd "max") (printf "%v" $pd.max) "") "name" ($pd.name | default "") "combine" ($pd.combine | default "")
+        "lname" $plabel "lvalues" $pvals
+        "at" ($pr.at | default "") "until" ($pr.until | default "") "date" ($pr.date | default "") "rv" (jsonify $pr.v) "value" (jsonify $pr.value) "runit" ($pr.unit | default "")
+        "rlabel" $rlabel "rlabelvalue" (printf "%v" $rvalue) "note" ($pr.note | default "") "by" ($pr.by | default "") "ref" ($pr.ref | default "") }}
+  {{- $defFields := slice
+        (dict "id" "define" "label" "define" "role" "what" "hint" "the name")
+        (dict "id" "dv" "label" "v" "role" "what" "hint" "its version" "mode" "numeric")
+        (dict "id" "kind" "label" "kind" "role" "measure" "hint" "how to read it" "options" (slice "quantity" "count" "score" "flag" "event"))
+        (dict "id" "dunit" "label" "unit" "role" "measure" "hint" "one, or a list")
+        (dict "id" "min" "label" "min" "role" "measure" "hint" "for a score" "mode" "decimal")
+        (dict "id" "max" "label" "max" "role" "measure" "hint" "for a score" "mode" "decimal")
+        (dict "id" "name" "label" "name" "role" "what" "hint" "shown to people")
+        (dict "id" "combine" "label" "combine" "role" "measure" "hint" "values in a period" "options" (slice "" "sum" "mean" "min" "max" "last"))
+        (dict "id" "lname" "label" "labels" "role" "annot" "hint" "a label's name")
+        (dict "wide" true "id" "lvalues" "label" "labels" "role" "annot" "hint" "its allowed values") }}
+  {{- $recFields := slice
+        (dict "wide" true "id" "at" "label" "at" "role" "time" "hint" "when it began")
+        (dict "wide" true "id" "until" "label" "until" "role" "time" "hint" "when it ended")
+        (dict "id" "date" "label" "date" "role" "time" "hint" "the day it counts for")
+        (dict "id" "rv" "label" "v" "role" "what" "hint" "the version it cites" "mode" "numeric")
+        (dict "id" "value" "label" "value" "role" "measure" "hint" "the number" "mode" "decimal")
+        (dict "id" "runit" "label" "unit" "role" "measure" "hint" "if several are allowed")
+        (dict "id" "rlabel" "label" "label" "role" "annot" "hint" "its name")
+        (dict "id" "rlabelvalue" "label" "label" "role" "annot" "hint" "its value")
+        (dict "wide" true "id" "note" "label" "note" "role" "annot" "hint" "for people")
+        (dict "id" "by" "label" "by" "role" "prov" "hint" "who recorded it")
+        (dict "id" "ref" "label" "ref" "role" "time" "hint" "its id at the source") }}
+  {{- $bErr := 0 }}{{ $bWarn := 0 }}{{ range $b.sampleRows }}{{ if eq .status "error" }}{{ $bErr = add $bErr 1 }}{{ else if eq .status "warning" }}{{ $bWarn = add $bWarn 1 }}{{ end }}{{ end }}
+  <form class="m-tool m-builder" data-metrics-builder id="builder" aria-label="Line builder">
+    <div class="row">
+      <div class="m-forms">
+        {{- range $part := slice (dict "legend" "Definition" "fields" $defFields "preset" true) (dict "legend" "Record" "fields" $recFields) }}
+        <fieldset class="m-fieldset" disabled>
+          <legend>{{ $part.legend }}</legend>
+          {{- if $part.preset }}
+          <div class="m-preset">
+            <label class="field-label" for="b-preset">Start from</label>
+            <select id="b-preset" class="m-select">
+              {{- range $b.presets }}<option value="{{ .key }}"{{ if eq .key $bpre.key }} selected{{ end }}>{{ .label }}</option>{{ end -}}
+              <option value="">Your own definition</option>
+            </select>
+          </div>
+          {{- end }}
+          <div class="m-fields">
+            {{- range $part.fields }}
+            <div class="m-field{{ if .wide }} m-field--wide{{ end }}">
+              <label for="b-{{ .id }}"><code class="f-{{ .role }}">{{ .label }}</code> <span class="m-hint">{{ .hint }}</span></label>
+              {{- if .options }}
+              <select id="b-{{ .id }}" class="m-select">
+                {{- $cur := index $val .id }}{{ range .options }}<option value="{{ . }}"{{ if eq . $cur }} selected{{ end }}>{{ . | default "none" }}</option>{{ end -}}
+              </select>
+              {{- else }}
+              <input id="b-{{ .id }}" type="text" value="{{ index $val .id }}" spellcheck="false" autocomplete="off"{{ with .mode }} inputmode="{{ . }}"{{ end }}>
+              {{- end }}
+            </div>
+            {{- end }}
+          </div>
+        </fieldset>
+        {{- end }}
+      </div>
+      <aside class="marginnote">
+        <p class="note-label">Load an example</p>
+        <div class="button-row m-examples" data-js-only hidden>
+          {{- range $b.examples }}<button type="button" class="button" data-builder-example="{{ .key }}">{{ .label }}</button>{{ end -}}
+        </div>
+        <p data-no-js>With JavaScript off the form can't be changed. The result below is for the values shown.</p>
+        <p><span class="note-label">Kinds.</span> A <code class="f-measure">quantity</code> is any number in a unit, and must say how its values <code class="f-measure">combine</code> (<a class="mono m-rule" href="{{ $spec }}#M-78">M-78</a>); a <code class="f-measure">count</code> is a whole number, zero or more; a <code class="f-measure">score</code> lies between <code class="f-measure">min</code> and <code class="f-measure">max</code>; a <code class="f-measure">flag</code> is 0 or 1 (<a class="mono m-rule" href="{{ $spec }}#section-6.4">§6.4</a>). An <code class="f-measure">event</code> definition is for event lines, never records.</p>
+        <p>Several units go in as a list, such as <code>km, m</code>; then each record says which it uses. Unit codes are not checked against a list, because that list is still to be written (<a class="mono m-rule" href="{{ $spec }}#section-12">§12</a>, question 4).</p>
+      </aside>
+    </div>
+    <div class="fullwidth m-result">
+      <p class="m-out-label" id="b-file-label">The file it makes</p>
+      <pre class="m-code m-code--out" aria-labelledby="b-file-label"><code data-builder-file>{{ $C.Get $bHeader | safeHTML }}{{ "\n" }}{{ $C.Get $bpre.line | safeHTML }}{{ "\n" }}{{ $C.Get $bex.record | safeHTML }}</code></pre>
+      <p class="m-verdict" data-builder-verdict aria-live="polite">
+        {{- if $bErr }}{{ index $badge "invalid" | safeHTML }}{{ else if $bWarn }}{{ index $badge "tolerated" | safeHTML }}{{ else }}{{ index $badge "valid" | safeHTML }} <span class="m-summary">The record is valid.</span>{{ end -}}
+      </p>
+      <div class="table-wrap">
+        <table class="booktabs m-checks">
+          <caption class="vh">Checks on the record and its definition</caption>
+          <thead><tr><th scope="col">Result</th><th scope="col">Line</th><th scope="col">Check</th><th scope="col">Rule</th><th scope="col">Detail</th></tr></thead>
+          <tbody data-builder-rows>
+            {{- range $b.sampleRows }}
+            <tr><td>{{ index $badge .status | safeHTML }}</td><td>{{ .part }}</td><td><code>{{ .check }}</code></td><td>{{ range $i, $r := .rules }}{{ if $i }} {{ end }}<a class="mono m-rule" href="{{ $spec }}#{{ $r }}">{{ $r }}</a>{{ end }}</td><td>{{ .detail }}</td></tr>
+            {{- end }}
+          </tbody>
+        </table>
+      </div>
+      <ul class="m-notes" data-builder-notes hidden></ul>
+    </div>
+  </form>
+
+  {{- else -}}
+  {{- warnf "metrics guide: unknown figure %q" $fig -}}
+  {{- end -}}
+  {{- end -}}
+  {{- end }}
+
+  <script type="application/json" id="metrics-guide-data">{{ dict "spec" $spec "set" $b.set "roles" $fields "presets" $b.presets "examples" $b.examples "files" $files | jsonify | safeJS }}</script>
+</article>
+{{ end }}
+
+{{ define "scripts" }}
+<script src="{{ "js/metrics.js" | relURL }}" defer></script>
+{{ end }}

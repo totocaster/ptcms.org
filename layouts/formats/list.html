@@ -1,20 +1,60 @@
 {{ define "main" }}
-<section class="content">
+{{- $formats := slice -}}
+{{- range site.Sections.ByWeight }}{{ if .Params.shortname }}{{ $formats = $formats | append . }}{{ end }}{{ end -}}
+{{- $note := printf "<p><span class=\"note-label\">Machine-readable.</span> The same registry as JSON: <a class=\"mono\" style=\"font-size:13px\" href=\"%s\">/formats.json</a>.</p><p><span class=\"note-label\">New format?</span> <a href=\"%s\">How formats mature</a> explains how to propose one.</p>" ("formats.json" | relURL) ("/formats/process/" | relURL) -}}
+<article class="prose">
+  {{ partial "title-block.html" (dict "p" . "note" ($note | safeHTML)) }}
   {{ .Content }}
-  {{ $families := where .Site.Sections "Params.catalog" "formats" }}
-  {{ if gt (len $families) 0 }}
-  <ul class="page-list">
-    {{ range $families.ByWeight }}
+
+  <h2 id="registry"><a class="sec" href="#registry">§1</a>The registry</h2>
+  <div class="table-wrap fullwidth">
+    <table class="booktabs">
+      <thead><tr><th scope="col">Format</th><th scope="col">Extension</th><th scope="col">Latest</th><th scope="col">Status</th><th scope="col">Published</th><th scope="col">Read</th></tr></thead>
+      <tbody>
+        {{- range $formats }}
+        {{- $latest := index (where .RegularPages "Type" "spec").ByDate.Reverse 0 }}
+        <tr>
+          <td><a href="{{ .RelPermalink }}" style="font-weight: 600">{{ .Title }}</a><br><span style="font-size: 14px; color: #3F3F3F">{{ .Params.summary }}</span></td>
+          <td class="mono" style="font-size: 14px">{{ .Params.extension }}</td>
+          <td>{{ with $latest }}<a class="mono" style="font-size: 14px" href="{{ .RelPermalink }}">{{ .Params.version }}</a>{{ end }}</td>
+          <td>{{ partial "status.html" .Params.status }}</td>
+          <td style="white-space: nowrap">{{ with $latest }}{{ .Date.Format "2006-01-02" }}{{ end }}</td>
+          <td style="font-size: 14px">{{ range $i, $g := (where .RegularPages "Params.role" "in" (slice "guide" "atlas" "companion")).ByWeight }}{{ if $i }} · {{ end }}<a href="{{ $g.RelPermalink }}">{{ $g.Params.navTitle | default $g.Title }}</a>{{ end }}</td>
+        </tr>
+        {{- end }}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="lifecycle"><a class="sec" href="#lifecycle">§2</a>Lifecycle</h2>
+  <p>A format moves forward by being used, not by the calendar. Each stage is a promise about how much can still change. Every published version keeps its own frozen address whatever its stage.</p>
+  <ol class="lifecycle fullwidth">
+    {{- range (partial "data.html" .).lifecycle }}
+    {{- $stage := .stage }}
     <li>
-      <a href="{{ .RelPermalink }}">
-        <span class="page-title">{{ .Title }}</span>
-        {{ with .Params.summary }}
-        <span class="page-summary">{{ . }}</span>
-        {{ end }}
-      </a>
+      <span class="lc-dot lc-dot--{{ $stage | lower | replaceRE `\s+` `-` }}" aria-hidden="true"></span>
+      {{ partial "status.html" $stage }}
+      <p>{{ .text }}</p>
+      {{- $now := slice }}{{ range $formats }}{{ if eq .Params.status $stage }}{{ $now = $now | append . }}{{ end }}{{ end }}
+      {{- with $now }}<p class="lc-now"><span>Now:</span> {{ range $i, $f := . }}{{ if $i }}, {{ end }}<a href="{{ $f.RelPermalink }}">{{ $f.Title }}</a>{{ end }}</p>{{ end }}
     </li>
-    {{ end }}
-  </ul>
-  {{ end }}
-</section>
+    {{- end }}
+  </ol>
+
+  <h2 id="criteria"><a class="sec" href="#criteria">§3</a>What makes a Commons format</h2>
+  {{- range $i, $c := (partial "data.html" .).criteria }}
+  <div class="row">
+    <p><strong>{{ add $i 1 }}. {{ $c.title }}</strong> {{ $c.text | markdownify }}</p>
+    <aside class="marginnote">{{ with $c.example }}<pre>{{ . }}</pre>{{ end }}<p class="cap">{{ $c.caption }}</p></aside>
+  </div>
+  {{- end }}
+
+  <h2 id="citing"><a class="sec" href="#citing">§4</a>Citing a format</h2>
+  <p>Cite the name, the full version and, when you mean one rule, its ID. Link the frozen address; it never changes.</p>
+  <pre>Plaintext Tasks 1.0.0, rule T-10.
+https://plaintextcommons.org/tasks/v1.0.0/#T-10
+
+Raw text:  https://plaintextcommons.org/tasks/v1.0.0/index.md
+Rules:     https://plaintextcommons.org/tasks/v1.0.0/rules.json</pre>
+</article>
 {{ end }}

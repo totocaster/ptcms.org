@@ -1,32 +1,26 @@
-{{ $pageTitle := cond .IsHome .Site.Title (printf "%s — %s" .Title .Site.Title) }}
-{{ $canonical := .Permalink }}
-{{ if .IsHome }}
-  {{ with .Site.GetPage "/manifesto" }}
-    {{ $canonical = .Permalink }}
-  {{ end }}
-{{ end }}
-<title>{{ $pageTitle }}</title>
-<meta name="description" content="{{ with .Params.description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}" />
-<link rel="canonical" href="{{ $canonical }}" />
-
-<meta property="og:title" content="{{ $pageTitle }}" />
-<meta property="og:site_name" content="{{ .Site.Params.sitename }}" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="{{ $canonical }}" />
-<meta property="og:description" content="{{ with .Params.description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}" />
-{{ with .Site.Params.og_image }}
-  <meta property="og:image" content="{{ . | absURL }}" />
-  <meta name="twitter:image" content="{{ . | absURL }}" />
-{{ end }}
-
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="{{ $pageTitle }}" />
-<meta name="twitter:description" content="{{ with .Params.description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}" />
-
-<meta name="theme-color" content="#fffff8" />
-
-
-{{ $style := resources.Get "css/plaintext.scss" | toCSS | minify }}
-<link rel="stylesheet" href="{{ $style.RelPermalink }}" />
-
+{{- $title := cond .IsHome .Site.Title (printf "%s — %s" (partial "page-title.html" .) .Site.Title) -}}
+{{- $desc := .Params.description | default .Params.summary | default .Site.Params.description -}}
+{{- $canonical := .Permalink -}}
+{{- with .Params.canonical }}{{ $canonical = . | absURL }}{{ end -}}
+{{- /* The current manifesto shows the newest text; its canonical address is the frozen copy. */ -}}
+{{- if eq .RelPermalink "/manifesto/" -}}
+  {{- with (where .Sections "Type" "proxy").ByDate.Reverse }}{{ $canonical = (index . 0).Permalink }}{{ end -}}
+{{- end -}}
+<title>{{ $title }}</title>
+<meta name="description" content="{{ $desc }}">
+<link rel="canonical" href="{{ $canonical }}">
+{{- range .AlternativeOutputFormats }}
+<link rel="{{ .Rel }}" type="{{ .MediaType.Type }}" href="{{ .Permalink }}">
+{{- end }}
+<link rel="alternate" type="application/json" href="{{ "formats.json" | absURL }}" title="Plaintext Commons formats">
+<meta property="og:title" content="{{ $title }}">
+<meta property="og:site_name" content="{{ .Site.Params.sitename }}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ $canonical }}">
+<meta property="og:description" content="{{ $desc }}">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="{{ "favicon.svg" | relURL }}" type="image/svg+xml">
+{{- $style := resources.Get "css/plaintext.scss" | toCSS | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $style.RelPermalink }}" integrity="{{ $style.Data.Integrity }}">
 {{ hugo.Generator }}

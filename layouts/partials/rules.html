@@ -1,0 +1,17 @@
+{{- /* Every rule in a spec page, read from its Markdown source:
+       sections are headings with {#section-N}; rules are "> **ID · STRENGTH · applies** text". */ -}}
+{{- $rules := slice -}}
+{{- $sec := "" -}}
+{{- $secTitle := "" -}}
+{{- range split .RawContent "\n" -}}
+  {{- with findRESubmatch `^#{2,6} (.+?)\s*\{#section-([0-9.]+)\}\s*$` . 1 -}}
+    {{- $g := index . 0 -}}
+    {{- $sec = index $g 2 -}}
+    {{- $secTitle = index $g 1 -}}
+  {{- end -}}
+  {{- with findRESubmatch `^> \*\*([A-Z]+-[0-9]+)(?: · ([A-Z ]+?))?(?: · ([a-z ,]+))?\*\* (.+)$` . 1 -}}
+    {{- $g := index . 0 -}}
+    {{- $rules = $rules | append (dict "id" (index $g 1) "strength" (index $g 2) "applies" (index $g 3) "text" (index $g 4) "section" $sec "sectionTitle" $secTitle) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $rules -}}

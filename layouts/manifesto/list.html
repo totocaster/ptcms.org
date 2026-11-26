@@ -1,0 +1,10 @@
+{{ define "main" }}
+{{- $frozen := index (where .Sections "Type" "proxy").ByDate.Reverse 0 -}}
+{{- $note := printf "<p><span class=\"note-label\">This is the current text.</span> Version %s keeps a frozen copy at <a class=\"mono\" style=\"font-size:13px\" href=\"%s\">%s</a>.</p>" (partial "version-value.html" .Params.version) $frozen.RelPermalink $frozen.RelPermalink -}}
+{{- with site.GetPage "/manifesto/history" }}{{ $note = printf "%s<p><a href=\"%s\">What changed between versions, and why</a></p>" $note .RelPermalink }}{{ end -}}
+{{- $note = printf "%s<p>The manifesto is in the public domain (<a href=\"%s\">source</a>).</p>" $note site.Params.repo -}}
+<article class="prose">
+  {{ partial "title-block.html" (dict "p" . "title" "Manifesto" "subtitle" .Params.description "note" ($note | safeHTML)) }}
+  {{ .Content }}
+</article>
+{{ end }}

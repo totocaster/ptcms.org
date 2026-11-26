@@ -1,0 +1,4 @@
+{{- /* Site data: hugo.Data from Hugo 0.156, site.Data before (production builds with 0.139). */ -}}
+{{- $data := dict -}}
+{{- if ge hugo.Version "0.156.0" }}{{ $data = hugo.Data }}{{ else }}{{ $data = site.Data }}{{ end -}}
+{{- return $data -}}

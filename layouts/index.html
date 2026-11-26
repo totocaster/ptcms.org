@@ -1,9 +1,71 @@
-{{ define "main" }}
-<article class="content home">
-  {{ partial "page-meta.html" . }}
-  {{ with .Params.summary }}
-    <p class="lede">{{ . }}</p>
-  {{ end }}
-  {{ .Content }}
-</article>
+{{ define "body" }}
+{{- $formats := slice -}}
+{{- range site.Sections.ByWeight }}{{ if .Params.shortname }}{{ $formats = $formats | append . }}{{ end }}{{ end -}}
+<div class="layout">
+  <main id="main" class="doc doc--full prose">
+    <section class="home-hero" aria-labelledby="home-title">
+      <p class="eyebrow">Plaintext Commons</p>
+      <h1 id="home-title">{{ site.Params.tagline }}</h1>
+      <p class="subtitle">{{ .Params.claim }}</p>
+      <p class="button-row" style="margin-top: 28px">
+        <a class="button" href="{{ "/manifesto/" | relURL }}">Read the manifesto</a>
+        <a class="button" href="{{ "/formats/" | relURL }}">Browse the formats</a>
+      </p>
+    </section>
+
+    <section class="home-section" aria-labelledby="laws">
+      <h2 id="laws">The three laws</h2>
+      <ol class="laws">
+        {{- range $i, $l := .Params.laws }}
+        <li><span class="n">{{ add $i 1 }}</span><h3>{{ $l.title }}</h3><p>{{ $l.text }}</p></li>
+        {{- end }}
+      </ol>
+    </section>
+
+    <section class="home-section" aria-labelledby="formats">
+      <h2 id="formats">Formats</h2>
+      <p style="max-width: 680px">Versioned, human-readable file formats that keep the file as the source of truth while giving apps and agents enough structure to read and write it safely.</p>
+      <div class="table-wrap">
+        <table class="booktabs">
+          <thead><tr><th scope="col">Format</th><th scope="col">For</th><th scope="col">Extension</th><th scope="col">Latest</th><th scope="col">Status</th></tr></thead>
+          <tbody>
+            {{- range $formats }}
+            <tr>
+              <td><a href="{{ .RelPermalink }}" style="font-weight: 600">{{ .Title }}</a></td>
+              <td>{{ .Params.summary }}</td>
+              <td class="mono" style="font-size: 14px">{{ .Params.extension }}</td>
+              <td><a class="mono" style="font-size: 14px" href="{{ .RelPermalink }}v{{ .Params.latest }}/">{{ .Params.latest }}</a></td>
+              <td>{{ partial "status.html" .Params.status }}</td>
+            </tr>
+            {{- end }}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="home-section" aria-labelledby="start">
+      <h2 id="start">Start here</h2>
+      <div class="starts">
+        <a href="{{ "/manifesto/" | relURL }}"><span class="s-title">Read the manifesto</span><span class="s-text">The stance in one page: nine principles, three laws, and norms for tools and agents.</span></a>
+        <a href="{{ "/manifesto/" | relURL }}#the-plaintext-test"><span class="s-title">Take the Plaintext Test</span><span class="s-text">Four questions to ask before you adopt a tool or a workflow.</span></a>
+        <a href="{{ "/formats/" | relURL }}"><span class="s-title">Use a format</span><span class="s-text">Specifications with rules you can cite, and guides that show every rule by example.</span></a>
+      </div>
+    </section>
+
+    <section class="home-section" aria-labelledby="machines">
+      <h2 id="machines">For tools and agents</h2>
+      <div class="table-wrap" style="max-width: 900px">
+        <table class="booktabs">
+          <thead><tr><th scope="col">Address</th><th scope="col">What it holds</th></tr></thead>
+          <tbody>
+            <tr><td class="mono" style="font-size: 14px">…/index.md</td><td>Every page as plain Markdown, next to the page itself</td></tr>
+            <tr><td><a class="mono" style="font-size: 14px" href="{{ "formats.json" | relURL }}">/formats.json</a></td><td>Every format, version, status and address</td></tr>
+            <tr><td><a class="mono" style="font-size: 14px" href="{{ "llms.txt" | relURL }}">/llms.txt</a></td><td>A short entry point for language models</td></tr>
+            <tr><td class="mono" style="font-size: 14px">/{format}/v{x.y.z}/rules.json</td><td>The rules of one version, with IDs and anchors</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
 {{ end }}

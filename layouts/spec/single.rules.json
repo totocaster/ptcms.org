@@ -1,0 +1,6 @@
+{{- $rules := partial "rules.html" . -}}
+{{- $out := slice -}}
+{{- range $rules -}}
+  {{- $out = $out | append (dict "id" .id "strength" .strength "applies_to" .applies "section" .section "section_title" .sectionTitle "text" .text "url" (printf "%s#%s" $.Permalink .id) "open" (in ($.Params.open_rules | default slice) .id)) -}}
+{{- end -}}
+{{- dict "format" .Parent.Title "shortname" .Parent.Params.shortname "version" .Params.version "status" .Params.status "published" (.Date.Format "2006-01-02") "url" .Permalink "markdown" (printf "%sindex.md" .Permalink) "rules" $out | jsonify (dict "indent" "  ") -}}

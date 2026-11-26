@@ -1,0 +1,3 @@
+{{- $n := "" -}}
+{{- with findRESubmatch `^section-([0-9.]+)$` .Anchor 1 }}{{ $n = index (index . 0) 1 }}{{ end -}}
+<h{{ .Level }} id="{{ .Anchor }}">{{ with $n }}<a class="sec" href="#section-{{ . }}">§{{ . }}</a>{{ end }}{{ .Text | safeHTML }}</h{{ .Level }}>

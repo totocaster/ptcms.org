@@ -1,3 +1,31 @@
 <footer class="site-footer">
-  <p>&copy; {{ now.Year }} {{ .Site.Title }} · Plain text is the common ground.</p>
+  <div class="wrap">
+    <div class="col">
+      <h2>Documents</h2>
+      <a href="{{ "/manifesto/" | relURL }}">Manifesto</a>
+      <a href="{{ "/glossary/" | relURL }}">Glossary</a>
+      <a href="{{ "/manifesto/history/" | relURL }}">History</a>
+    </div>
+    <div class="col">
+      <h2>Formats</h2>
+      <a href="{{ "/formats/" | relURL }}">Registry</a>
+      {{- range site.Sections.ByWeight }}{{ if .Params.shortname }}
+      <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+      {{- end }}{{ end }}
+      <a href="{{ "/formats/process/" | relURL }}">How formats mature</a>
+    </div>
+    <div class="col">
+      <h2>Machine-readable</h2>
+      <span>Every page as Markdown: add <span class="mono" style="font-size: 13px">index.md</span></span>
+      <a href="{{ "formats.json" | relURL }}" class="mono" style="font-size: 13px">/formats.json</a>
+      <a href="{{ "llms.txt" | relURL }}" class="mono" style="font-size: 13px">/llms.txt</a>
+      <a href="{{ "index.xml" | relURL }}">RSS</a>
+    </div>
+    <div class="col">
+      <h2>Project</h2>
+      <a href="{{ site.Params.repo }}">Manifesto source on GitHub</a>
+      <a href="{{ "/about/" | relURL }}">About this site</a>
+    </div>
+    <p class="colophon">Plain text is the common ground.</p>
+  </div>
 </footer>

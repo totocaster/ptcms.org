@@ -1,0 +1,45 @@
+# Field roles for the Plaintext Metrics companion. One ink per role, used the same way
+# in figures, in code and in the running text that names a field.
+# Deep colour for text, mid for marks, tint for grounds. Classes: .f-<role> (text), .r-<role> (all three).
+roles:
+  - { key: "time", name: "identity and time", ink: "teal" }
+  - { key: "what", name: "what", ink: "plum" }
+  - { key: "measure", name: "measurement", ink: "indigo" }
+  - { key: "prov", name: "provenance", ink: "ochre" }
+  - { key: "annot", name: "annotation", ink: "green" }
+# Every field of the format, and the labels used in this guide's examples (labels are annotation).
+fields:
+  at: "time"
+  date: "time"
+  until: "time"
+  id: "time"
+  ref: "time"
+  metric: "what"
+  define: "what"
+  event: "what"
+  v: "what"
+  name: "what"
+  about: "what"
+  was: "what"
+  metrics: "what"
+  parts: "what"
+  value: "measure"
+  unit: "measure"
+  kind: "measure"
+  min: "measure"
+  max: "measure"
+  combine: "measure"
+  levels: "measure"
+  format: "prov"
+  set: "prov"
+  by: "prov"
+  note: "annot"
+  labels: "annot"
+  lat: "annot"
+  lon: "annot"
+  of: "annot"
+  meta: "annot"
+  medium: "annot"
+  segment: "annot"
+  surface: "annot"
+  room: "annot"

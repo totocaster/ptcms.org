@@ -1,0 +1,3 @@
+{{- /* True when the page is a format section or lives inside one. */ -}}
+{{- $s := .FirstSection -}}
+{{- return (and $s (isset $s.Params "shortname")) -}}
