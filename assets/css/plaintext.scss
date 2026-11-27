@@ -257,21 +257,7 @@ label.field-label { display: block; font-size: 13px; color: var(--muted); margin
 .site-footer h2 { margin: 0 0 4px; font-size: 12.5px; color: var(--muted); font-weight: 600; }
 .site-footer .colophon { flex: 1 1 100%; margin: 8px 0 0; padding-top: 20px; border-top: 1px solid var(--hair); color: var(--ink-2); }
 
-/* ----- Front door ----- */
-.home-hero { max-width: 900px; }
-.home-hero h1 { font-size: 56px; line-height: 1.05; letter-spacing: -0.02em; margin: 0; font-weight: 600; }
-.home-hero .subtitle { font-size: 22px; }
-.laws { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin: 0; padding: 0; list-style: none; border-top: 1.5px solid var(--ink); }
-.laws li { padding-top: 16px; }
-.laws .n { font-family: var(--mono); color: var(--muted); font-size: 15px; }
-.laws h3 { margin: 6px 0 8px; font-size: 22px; line-height: 1.25; font-weight: 600; }
-.laws p { margin: 0; color: var(--ink-2); font-size: 16px; }
-.home-section { margin-top: 72px; }
-.home-section > h2 { margin: 0 0 18px; font-size: 26px; font-weight: 600; }
-.starts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
-.starts a { display: block; text-decoration: none; border-top: 1px solid var(--hair); padding-top: 14px; }
-.starts .s-title { display: block; font-weight: 600; font-size: 18px; margin-bottom: 4px; }
-.starts .s-text { display: block; color: var(--ink-2); font-size: 15.5px; line-height: 1.55; }
+/* The front door's own styles are in home.scss. */
 
 /* A row pairs a main-column block with its margin note, top-aligned. */
 .row { display: grid; grid-template-columns: minmax(0, var(--main)) var(--margin); column-gap: var(--gap); margin-right: calc(-1 * (var(--gap) + var(--margin))); align-items: start; }
@@ -298,7 +284,6 @@ label.field-label { display: block; font-size: 13px; color: var(--muted); margin
   .tree-box > summary::after { content: "+"; font-family: var(--mono); color: var(--muted); }
   .tree-box[open] > summary::after { content: "−"; }
   .tree-box[open] > summary { margin-bottom: 8px; }
-  .laws, .starts { grid-template-columns: 1fr; }
   .search-box { width: 100%; }
   .search, .header-tools { width: 100%; }
   .search-results { width: 100%; }
@@ -310,7 +295,6 @@ label.field-label { display: block; font-size: 13px; color: var(--muted); margin
   .layout { padding: 32px 18px 72px; }
   .site-header .wrap, .crumbs ol, .site-footer .wrap { padding-left: 18px; padding-right: 18px; }
   .doc h1 { font-size: 34px; }
-  .home-hero h1 { font-size: 38px; }
 }
 
 /* ----- Print ----- */

@@ -1,0 +1,254 @@
+# The home page: layouts/index.html, its Markdown twin layouts/index.md, and static/js/home.js.
+# The manifesto quotes (claim, problem, consequence) and the three laws stay in content/_index.md.
+# This file holds everything around them: the switch, the three evidence figures with their
+# steppers, captions and verdicts, and the notes beside the two tables.
+#
+# Fields marked (md) are Markdown, and may carry inline HTML for documentation inks
+# (.t-heading, .t-task, .t-meta, .t-note, .t-sep, .hm-add, .hm-del, .hm-hl).
+# Two placeholders are filled in at build time:
+#   {spec}       the address of the Tasks version the figures describe (figures.describes).
+#                Every §section and rule ID cited through it must exist there, or the build fails.
+#   {manifesto}  the current manifesto version, such as 0.2.0.
+
+hero:
+  # Two facts that cannot be counted from the site. The manifesto version, its date and the
+  # number of laws are read from the manifesto page and content/_index.md.
+  principles: "Nine"
+  license: "Public domain"
+  argument: "The argument"
+
+laws:
+  heading: "The three laws"
+  intro: "Each law stands above an artefact you can work: move a folder, open one file with three tools, step a change through review. Each artefact works two ways. Inside an app, it behaves the way the manifesto’s Problem describes; in the Commons, the way the law asks. The links beneath point to where this site applies the law to itself."
+  aside: # (md) "live" once home.js runs; "static" without it.
+    live: "Laws quoted from the manifesto `{manifesto}`. The app figures show no particular product and are marked *Illustration*; the files in the Commons are marked *example*. The switch changes all three figures; the buttons inside a figure change only that figure."
+    static: "Laws quoted from the manifesto `{manifesto}`. The app figures show no particular product and are marked *Illustration*; the files in the Commons are marked *example*. Each law shows both figures, one above the other, with every step."
+  # The Markdown twin's line under the heading. (md)
+  twin: "Quoted from the manifesto `{manifesto}`. Under each law: the same record inside an app, then in the Commons, and the question of the Plaintext Test it answers."
+
+switch:
+  label: "Where the record lives"
+  # Shown instead of the switch when the page runs without JavaScript.
+  static: "Each law below shows two figures: inside an app, then in the Commons."
+  modes:
+    - key: "app"
+      label: "Inside an app"
+      quote: "problem"      # the content/_index.md field the run-in line quotes
+      quote_label: "Problem."
+      announce: "All three figures now show the record inside an app."
+    - key: "commons"
+      label: "In the Commons"
+      quote: "claim"
+      quote_label: "Claim."
+      announce: "All three figures now show the record in the Commons."
+
+figures:
+  describes: { format: "tasks", version: "0.1.1" }
+  marks: { app: "Illustration", commons: "example" }
+  back: "Back"
+
+  # The example file of figures 2 and 3, before and after the change. Types are Plaintext Tasks line types.
+  file:
+    name: "home.tasks.md"
+    before:
+      - { text: "# Workboard", type: "title" }
+      - { text: "## Work", type: "heading" }
+      - { text: "- [ ] Ship beta", type: "task" }
+      - { text: "  @due: 2026-04-01", type: "meta" }
+      - { text: "  Waiting on icons from design.", type: "note" }
+      - { text: "---", type: "sep" }
+      - { text: "- [x] File taxes", type: "task" }
+      - { text: "  @done: 2026-03-20", type: "meta" }
+    after:
+      - { text: "# Workboard", type: "title" }
+      - { text: "## Work", type: "heading" }
+      - { text: "- [x] Ship beta", type: "task", change: "Changed" }
+      - { text: "  @due: 2026-04-01", type: "meta" }
+      - { text: "  @done: 2026-04-01", type: "meta", change: "Added" }
+      - { text: "  Waiting on icons from design.", type: "note" }
+      - { text: "---", type: "sep" }
+      - { text: "- [x] File taxes", type: "task" }
+      - { text: "  @done: 2026-03-20", type: "meta" }
+
+  laws:
+    # ---------- Law 1: the folder is the platform ----------
+    - kind: "folder"
+      control: "Move the folder"
+      strip: "How it got there"
+      files: { app: "different in every place", commons: "the same in every place" }
+      # The example corpus, the same in every place.
+      corpus:
+        - { name: "notes/", children: [ { name: "2026-11-26 walk.md", kind: "Markdown note" } ] }
+        - { name: "home.tasks.md", kind: "Plaintext Tasks" }
+        - { name: "journal.metrics", kind: "Plaintext Metrics" }
+        - { name: "README.md", kind: "Markdown" }
+      app_hidden: "Its contents cannot be read outside the app."
+      left_label: "Left behind"
+      steps:
+        - key: "laptop"
+          label: "Laptop"
+          prefix: "/Users/ada/"
+          commons:
+            mark: "where it starts"
+            cmd: "ls /Users/ada/corpus"
+            note: "Where it starts: an ordinary folder in the home directory."
+          app:
+            rest: "app data/store.db"
+            mark: "where it starts"
+            file: "store.db"
+            file_note: "one database file"
+            inside: "Notes, tasks and readings, in the app’s own layout"
+            left: "nothing yet"
+            menu: "Written by the app, in its own folder"
+            note: "Where it starts: every record inside one database file, readable through the app."
+        - key: "archive"
+          label: "Archive drive"
+          prefix: "/Volumes/Archive/"
+          commons:
+            mark: "changed"
+            cmd: "mv /Users/ada/corpus /Volumes/Archive/"
+            note: "Moved to an external drive. No export step."
+          app:
+            rest: "export.zip"
+            mark: "exported"
+            file: "export.zip"
+            file_note: "an export archive"
+            inside: "The fields you chose, in the form the export offers"
+            left: "fields you did not choose"
+            menu: "Settings → Export… → choose fields → save the archive"
+            note: "An export, not a move. The records leave in the form the export offers."
+        - key: "newlaptop"
+          label: "New laptop"
+          prefix: "/home/ada/"
+          commons:
+            mark: "changed"
+            cmd: "cp -R /Volumes/Archive/corpus /home/ada/"
+            note: "Copied onto a new machine. No import step, nothing to convert."
+          app:
+            rest: "app data/store.db"
+            mark: "imported"
+            file: "store.db"
+            file_note: "a new database file"
+            inside: "What the import could map, in the app’s own layout"
+            left: "what the import could not map"
+            menu: "Settings → Import… → open the archive → map the fields"
+            note: "An import, not a copy. What the import cannot map is left out."
+      caption: # (md)
+        app: "Illustration. A generic app keeps every record in one database file, in a layout of its own. Press a place: each move goes through an export or an import, and each one leaves something behind."
+        commons: "An example corpus in three places. Press a place: only the <span class=\"hm-hl\">highlighted</span> part of the path changes. The files, their names and their formats stay as they are, so moving the folder is the whole migration."
+      verdict:
+        app: "Inside an app, leaving takes an export and an import."
+        commons: "In the Commons, leaving is a move, not an export."
+      test: { number: 2, question: "Can I move the folder and keep working—no exports required?" }
+      site: { glossary: "corpus" }   # quotes the term from data/glossary.yaml
+
+    # ---------- Law 2: the file is the protocol ----------
+    - kind: "file"
+      control: "Open it with"
+      strip: "What it sees"
+      strip_note: { app: "one database file", commons: "same file, 8 lines" }
+      app_bytes: "Eight rows of bytes. The words Ship beta show through among them; nothing else can be read."
+      app_agent: "The structure around the match belongs to the app."
+      steps:
+        - key: "text"
+          label: "Text editor"
+          app: "A text editor opens the file but shows bytes, not tasks. Pieces of “Ship beta” show through; the structure around them belongs to the app."
+          commons: "The file as stored: eight lines of plain text, hand-editable in any text editor ([§14]({spec}#section-14))."
+        - key: "app"
+          label: "Task app"
+          app: "Only the app that wrote store.db can show the tasks. Its view is the only way in."
+          commons: "Rendered, not converted: the title becomes the list, the heading a section, metadata subtext, the archive a logbook ([§13]({spec}#section-13))."
+        - key: "agent"
+          label: "Agent"
+          app: "A text tool can only report a match. The line, its state and its due date stay inside the app’s layout."
+          commons: "Parsed top to bottom: metadata and notes attach to the task one level up ([`T-40`, `T-41`]({spec}#section-12)). Each fact keeps its line."
+      caption: # (md)
+        app: "Illustration. One database file, three readers. Only the app that wrote it can show the tasks; a text editor sees bytes, and a text tool can only report a match."
+        commons: "One example file, three readers. In every view the colours name the same Tasks line types: the title, a <span class=\"t-heading\">section heading</span>, <span class=\"t-task\">tasks</span>, <span class=\"t-meta\">metadata</span>, a <span class=\"t-note\">note</span>, the <span class=\"t-sep\">archive separator</span>. On disk it stays plain text."
+      verdict:
+        app: "Inside an app, only that app can read the record."
+        commons: "In the Commons, any program that reads text can read the record."
+      test: { number: 1, question: "Can I read/edit the files with a basic text editor?" }
+      site: { url: "/formats/", label: "Formats registry", text: "A version, once released, lives at its own address and never changes." }
+
+    # ---------- Law 3: writes are previewed and reviewable ----------
+    - kind: "writes"
+      control: "Step through a change"
+      app_preview: { title: "No preview: already saved", text: "There are no lines to compare. The change is already in `store.db`.", foot: "No lines shown. Everything is written already." }
+      app_accept: "Nothing to accept. This was written at step 1."
+      app_log: "The history keeps the new state and when it arrived. It keeps neither the lines that changed nor the reason, which was never asked for."
+      commons_preview: "Nothing is written yet."
+      commons_log: "The `what:` line is the diff in brief. The `why:` line is the one you read in the preview, now kept beside the change."
+      why: "The beta shipped; mark it done."
+      steps:
+        - key: "propose"
+          label: "Propose"
+          next: "Next: preview"
+          app: "In the app, the change is saved the moment it is made. There is no proposal to read."
+          commons: "A tool proposes a change, with its reason. Nothing is written yet."
+        - key: "preview"
+          label: "Preview"
+          next: "Next: accept"
+          app: "No preview: already saved. There are no lines to compare before the write."
+          commons: "You see the exact lines that would change, and why, before anything is written."
+        - key: "accept"
+          label: "Accept"
+          next: "Next: log"
+          app: "Nothing to accept. The change was written at step 1, with no reason attached."
+          commons: "Accepted and written. The task stays above the separator: writers should not silently move tasks across it ([`T-51`]({spec}#T-51))."
+        - key: "log"
+          label: "Log"
+          next: "Start again"
+          app: "The history shows the new state and when it arrived. Why: not recorded."
+          commons: "The log keeps why the change happened, not just what changed."
+      caption: # (md)
+        app: "Illustration. The same change inside a generic app, one step at a time. It is written the moment it is made, so there is nothing to preview or accept, and the history keeps the new state but not the reason."
+        commons: "An example change, one step at a time: <span class=\"hm-add\">+</span> added, <span class=\"hm-del\">−</span> removed. Nothing is written until you accept, and the log keeps the `why:` line, not only the diff."
+      verdict:
+        app: "Inside an app, the change is written at once and its reason is not kept."
+        commons: "In the Commons, nothing is written until you accept, and the reason stays with the change."
+      test: { number: 3, question: "Can the tool propose a human-auditable preview of changes (with rationale) before writing?" }
+      site: { url: "/manifesto/history/", label: "Manifesto history", text: "Every revision keeps its own frozen address; the page shows what changed between them, and why." }
+
+test:
+  label: "The Plaintext Test."
+  text: "Each figure answers one of its four questions. The fourth asks what all three laws are for:"
+  fourth: { number: 4, question: "Will this still make sense in ten years?" }
+  link: "Read the test"
+
+formats:
+  heading: "Formats"
+  intro: "Versioned, human-readable file formats that keep the file as the source of truth while giving apps and agents enough structure to read and write it safely."
+  footnote: "Status describes the latest version. Earlier versions stay at their own addresses."
+  # Below the table. "drafts" when every latest version is a working draft, "mixed" otherwise.
+  drafts: "written in the open, and anything can still change."
+  mixed: "Each stage is a promise about how much can still change."
+  open_label: "Open questions."
+  # A line of each format, keyed by shortname. Classes are the documentation inks of plaintext.scss.
+  samples:
+    tasks:
+      - { text: "- [ ] Ship beta", class: "t-task" }
+    metrics:
+      - { text: "{" }
+      - { text: "\"date\":\"2026-11-26\"", class: "f-time" }
+      - { text: "," }
+      - { text: "\"metric\":\"reading.pages\"", class: "f-what" }
+      - { text: ",…}" }
+  # What is still undecided in each format's latest version, keyed by shortname. (md)
+  open:
+    tasks: "the specification’s own example has an unindented note under a heading, which `T-14` seems to forbid."
+    metrics: "`M-35`, the list of unit codes."
+
+programs:
+  heading: "For programs"
+  markdown: "Every page as plain Markdown, next to the page itself"
+  formats: "Every format, version, status and address"
+  llms: "A short entry point for language models"
+  rules: "The {n} rules of {format} {version}, with IDs and anchors"
+  agents: "**For agents.** Read the Markdown twin rather than the page: add `index.md` to any address. This page’s twin is {twin}." # (md)
+  # A spec's extra files (the `files` of its front matter), named by key. {n} counts the files
+  # in that folder that carry the format's extension.
+  files:
+    schema: "a JSON Schema"
+    examples: "{n} example files"
+  files_sentence: "{format} {version} also comes with {files}."

@@ -1,71 +1,613 @@
+{{ define "head" }}
+{{- $css := resources.Get "css/home.scss" | toCSS | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+{{- end }}
+
 {{ define "body" }}
+{{- /* The front door. Copy lives in data/home.yaml; the claim, the manifesto quotes and the laws in
+       content/_index.md; the formats and their versions come from the format sections themselves.
+       Every state of the three figures is rendered here. Without JavaScript each law shows its figure
+       inside an app above its figure in the Commons, every step stacked and labelled; static/js/home.js
+       turns the section into one frame per figure, with a switch and steppers. */ -}}
+{{- $p := . -}}
+{{- $d := (partial "data.html" .).home -}}
+{{- $glossary := (partial "data.html" .).glossary -}}
+{{- $words := slice "no" "one" "two" "three" "four" "five" "six" "seven" "eight" "nine" "ten" -}}
+{{- $manifesto := site.GetPage "/manifesto" -}}
+{{- $mver := partial "version-value.html" $manifesto.Params.version -}}
 {{- $formats := slice -}}
 {{- range site.Sections.ByWeight }}{{ if .Params.shortname }}{{ $formats = $formats | append . }}{{ end }}{{ end -}}
+{{- $modes := slice "app" "commons" -}}
+{{- $modeLabel := dict -}}
+{{- range $d.switch.modes }}{{ $modeLabel = merge $modeLabel (dict .key .label) }}{{ end -}}
+{{- $marks := $d.figures.marks -}}
+{{- $file := $d.figures.file -}}
+
+{{- /* The Tasks version the figures describe. Every section and rule they cite must exist in it. */ -}}
+{{- $fd := $d.figures.describes -}}
+{{- $fsec := site.GetPage (printf "/%s" $fd.format) -}}
+{{- if not $fsec }}{{ errorf "data/home.yaml: figures.describes names the format %q, which has no section" $fd.format }}{{ end -}}
+{{- $specs := where (where $fsec.RegularPages "Type" "spec") "Params.version" $fd.version -}}
+{{- if not $specs }}{{ errorf "data/home.yaml: figures.describes names %s %s, which has no spec page" $fd.format $fd.version }}{{ end -}}
+{{- $spec := index $specs 0 -}}
+{{- $s := $spec.RelPermalink -}}
+{{- $cited := "" -}}
+{{- range $d.figures.laws }}{{ if ne .kind "folder" }}{{ range .steps }}{{ $cited = printf "%s %s %s" $cited .app .commons }}{{ end }}{{ end }}{{ end -}}
+{{- $specIDs := $spec.Fragments.Identifiers -}}
+{{- $specRules := partial "rules.html" $spec -}}
+{{- range findRE `\{spec\}#[A-Za-z0-9.-]+` $cited -}}
+  {{- $id := strings.TrimPrefix "{spec}#" . -}}
+  {{- if hasPrefix $id "section-" -}}
+    {{- if not (in $specIDs $id) }}{{ errorf "data/home.yaml cites %s#%s, which is not a section of %s" $s $id $spec.File.Path }}{{ end -}}
+  {{- else if not (where $specRules "id" $id) -}}
+    {{- errorf "data/home.yaml cites %s#%s, which is not a rule of %s" $s $id $spec.File.Path -}}
+  {{- end -}}
+{{- end -}}
+{{- $check := `<svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.4 6.2l2.3 2.3 4.8-5" fill="none" stroke="#FFFFFF" stroke-width="1.8"/></svg>` | safeHTML -}}
+
 <div class="layout">
-  <main id="main" class="doc doc--full prose">
-    <section class="home-hero" aria-labelledby="home-title">
-      <p class="eyebrow">Plaintext Commons</p>
-      <h1 id="home-title">{{ site.Params.tagline }}</h1>
-      <p class="subtitle">{{ .Params.claim }}</p>
-      <p class="button-row" style="margin-top: 28px">
-        <a class="button" href="{{ "/manifesto/" | relURL }}">Read the manifesto</a>
-        <a class="button" href="{{ "/formats/" | relURL }}">Browse the formats</a>
-      </p>
+  <main id="main" class="doc doc--full hm">
+
+    <section class="hm-hero" aria-labelledby="home-title">
+      <p class="eyebrow">{{ site.Title }}</p>
+      <h1 id="home-title" class="hm-title">{{ site.Params.tagline }}</h1>
+      <div class="hm-split">
+        <div class="hm-main">
+          <p class="hm-claim">{{ .Params.claim }}</p>
+          <div class="meta hm-meta">
+            <span><span class="k">Manifesto</span><span class="v-mono">{{ $mver }}</span></span>
+            {{- with $manifesto.Date }}{{ if not .IsZero }}
+            <span><span class="k">Published</span>{{ .Format "2006-01-02" }}</span>
+            {{- end }}{{ end }}
+            <span><span class="k">Principles</span>{{ $d.hero.principles }}</span>
+            <span><span class="k">Laws</span>{{ index $words (len .Params.laws) | humanize }}</span>
+            <span><span class="k">License</span>{{ $d.hero.license }}</span>
+          </div>
+          <p class="button-row hm-cta">
+            <a class="button" href="{{ "/manifesto/" | relURL }}">Read the manifesto</a>
+            <a class="button" href="{{ "/formats/" | relURL }}">Browse the formats</a>
+            <a class="hm-cta-test" href="{{ "/manifesto/" | relURL }}#the-plaintext-test">Take the Plaintext Test</a>
+          </p>
+        </div>
+        <aside class="hm-side hm-argument" aria-label="{{ $d.hero.argument }}">
+          <p><span class="hm-lead">Problem.</span> {{ .Params.problem | markdownify }}</p>
+          <p><span class="hm-lead">Consequence.</span> {{ .Params.consequence | markdownify }}</p>
+        </aside>
+      </div>
     </section>
 
-    <section class="home-section" aria-labelledby="laws">
-      <h2 id="laws">The three laws</h2>
-      <ol class="laws">
-        {{- range $i, $l := .Params.laws }}
-        <li><span class="n">{{ add $i 1 }}</span><h3>{{ $l.title }}</h3><p>{{ $l.text }}</p></li>
+    <section id="laws" class="hm-sec hm-laws" aria-labelledby="h-laws" data-home-laws data-mode="{{ (index $d.switch.modes 0).key }}">
+      <h2 id="h-laws" class="hm-h2"><span class="sec">§1</span>{{ $d.laws.heading }}</h2>
+      <div class="hm-split hm-intro">
+        <p class="hm-lede">{{ $d.laws.intro }}</p>
+        <aside class="hm-side">
+          <span data-js hidden>{{ replace $d.laws.aside.live "{manifesto}" $mver | markdownify }}</span>
+          <span data-nojs>{{ replace $d.laws.aside.static "{manifesto}" $mver | markdownify }}</span>
+        </aside>
+      </div>
+
+      {{- /* The switch: one control for all three figures. The run-in line keeps the height of its longer sentence. */}}
+      <div class="hm-switchbar">
+        <div class="hm-switch" data-js hidden>
+          <span id="mode-label" class="hm-switch-label">{{ $d.switch.label }}</span>
+          <div class="hm-switch-group" role="group" aria-labelledby="mode-label">
+            {{- range $i, $m := $d.switch.modes }}
+            <button type="button" data-mode-btn="{{ $m.key }}" data-announce="{{ $m.announce }}" aria-pressed="{{ cond (eq $i 0) "true" "false" }}">{{ $m.label }}</button>
+            {{- end }}
+          </div>
+        </div>
+        <p class="hm-switch-static" data-nojs>{{ $d.switch.static }}</p>
+        <p class="hm-runin hm-ov">
+          {{- range $d.switch.modes }}
+          <span class="hm-o" data-for="{{ .key }}"><span class="hm-lead">{{ .quote_label }}</span> {{ index $p.Params .quote | markdownify }}</span>
+          {{- end }}
+        </p>
+        <p class="vh" aria-live="polite" data-live="mode"></p>
+      </div>
+
+      <div class="hm-grid">
+        {{- range $i, $law := .Params.laws }}
+        {{- $n := add $i 1 }}
+        {{- $f := index $d.figures.laws $i }}
+        {{- if not $f }}{{ errorf "data/home.yaml: figures.laws has no figure for law %d" $n }}{{ end }}
+        {{- $N := len $f.steps }}
+        <article class="hm-law hm-law--{{ $f.kind }}" aria-labelledby="law-{{ $n }}" data-law="{{ $f.kind }}">
+          <div class="hm-law-head">
+            <span class="hm-law-n">{{ $n }}</span>
+            <h3 id="law-{{ $n }}">{{ $law.title }}</h3>
+          </div>
+          <p class="hm-law-text">{{ $law.text | markdownify }}</p>
+          <div class="hm-ev">
+            {{- range $mode := $modes }}
+            {{- $c := eq $mode "commons" }}
+            {{- $mark := index $marks $mode }}
+            {{- $lid := printf "l%d-%s" $n $mode }}
+            <figure class="hm-fig hm-fig--{{ $mode }}" data-for="{{ $mode }}">
+              <div class="hm-pnl">
+                <div class="hm-ctl">
+                  <div class="hm-ctl-head">
+                    <p class="hm-ctl-label" id="{{ $lid }}-label">{{ $f.control }}</p>
+                    <span class="hm-tag" id="{{ $lid }}-tag">{{ index $modeLabel $mode }}</span>
+                  </div>
+                  {{- if eq $f.kind "folder" }}
+                  <div class="hm-picks" role="group" aria-labelledby="{{ $lid }}-label {{ $lid }}-tag" data-js hidden>
+                    {{- range $j, $st := $f.steps }}
+                    {{- if $j }}<span class="hm-arrow" aria-hidden="true">→</span>{{ end }}
+                    <button type="button" class="hm-pick" data-pick="{{ $st.key }}" aria-pressed="{{ cond (eq $j 0) "true" "false" }}">{{ $st.label }}</button>
+                    {{- end }}
+                  </div>
+                  {{- else if eq $f.kind "file" }}
+                  <div class="hm-seg" role="group" aria-labelledby="{{ $lid }}-label {{ $lid }}-tag" data-js hidden>
+                    {{- range $j, $st := $f.steps }}
+                    <button type="button" data-pick="{{ $st.key }}" aria-pressed="{{ cond (eq $j 0) "true" "false" }}">{{ $st.label }}</button>
+                    {{- end }}
+                  </div>
+                  {{- else }}
+                  <ol class="hm-steps" aria-labelledby="{{ $lid }}-label {{ $lid }}-tag">
+                    {{- range $j, $st := $f.steps }}
+                    <li data-step="{{ $j }}" data-next-label="{{ $st.next }}"><span class="mono">{{ add $j 1 }}</span>{{ $st.label }}</li>
+                    {{- end }}
+                  </ol>
+                  {{- end }}
+                </div>
+
+                <div class="hm-frames">
+                {{- range $j, $st := $f.steps }}
+                {{- $k := add $j 1 }}
+
+                {{- if eq $f.kind "folder" }}
+                {{- $m := index $st $mode }}
+                <div class="hm-frame" data-frame="{{ $st.key }}">
+                  <p class="hm-frame-label" data-frame-label>{{ $st.label }} ({{ $k }} of {{ $N }})</p>
+                  <div class="hm-display">
+                    <div class="hm-bar"><span class="hm-strong">{{ $st.label }}</span><span class="hm-ex">{{ $mark }}</span></div>
+                    <div class="hm-path">
+                      <span class="hm-k">Path</span>
+                      <span class="hm-path-v mono">{{ if $c }}<span class="hm-prefix">{{ $st.prefix }}</span>corpus/{{ else }}<span class="hm-prefix">{{ $st.prefix }}{{ $m.rest }}</span>{{ end }}</span>
+                      <span class="hm-mark">{{ $m.mark }}</span>
+                    </div>
+                    <div class="hm-files-head"><span class="hm-k">Files</span><span class="hm-files-note">{{ index $f.files $mode }}</span></div>
+                    <ul class="hm-files mono">
+                      {{- if $c }}
+                      {{- range $f.corpus }}
+                      {{- if .children }}
+                      <li class="hm-dir"><span class="hm-file">{{ .name }}</span>
+                        <ul class="hm-sub">
+                          {{- range .children }}
+                          <li class="hm-file"><span class="hm-file-name">{{ .name }}</span><span class="hm-dots" aria-hidden="true"></span><span class="hm-file-kind">{{ .kind }}</span></li>
+                          {{- end }}
+                        </ul>
+                      </li>
+                      {{- else }}
+                      <li class="hm-file"><span class="hm-file-name">{{ .name }}</span><span class="hm-dots" aria-hidden="true"></span><span class="hm-file-kind">{{ .kind }}</span></li>
+                      {{- end }}
+                      {{- end }}
+                      {{- else }}
+                      <li class="hm-file"><span class="hm-file-name">{{ $m.file }}</span><span class="hm-dots" aria-hidden="true"></span><span class="hm-file-kind">{{ $m.file_note }}</span></li>
+                      <li class="hm-blobs">
+                        <span class="vh">{{ $f.app_hidden }}</span>
+                        <span class="hm-blob hm-blob--1" aria-hidden="true"></span>
+                        <span class="hm-blob hm-blob--2" aria-hidden="true"></span>
+                        <span class="hm-blob hm-blob--3" aria-hidden="true"></span>
+                        <span class="hm-blob-text">{{ $m.inside }}</span>
+                      </li>
+                      <li class="hm-file"><span class="hm-file-left">{{ $f.left_label }}</span><span class="hm-dots" aria-hidden="true"></span><span class="hm-file-kind hm-file-kind--ink">{{ $m.left }}</span></li>
+                      {{- end }}
+                    </ul>
+                  </div>
+                  <div class="hm-strip">
+                    <div class="hm-bar"><span>{{ $f.strip }}</span><span class="hm-ex">{{ $k }} of {{ $N }}</span></div>
+                    <div class="hm-strip-body">
+                      {{- if $c }}
+                      <div class="hm-cmd mono"><span class="hm-dim">$</span> {{ $m.cmd }}</div>
+                      {{- else }}
+                      <div class="hm-menu">{{ $m.menu }}</div>
+                      {{- end }}
+                      <p class="hm-say" data-say>{{ $m.note }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {{- else if eq $f.kind "file" }}
+                <div class="hm-frame" data-frame="{{ $st.key }}">
+                  <p class="hm-frame-label" data-frame-label>{{ $st.label }}</p>
+                  <div class="hm-display">
+                    {{- if eq $st.key "text" }}
+                    {{- if $c }}
+                    <div class="hm-bar"><span class="mono">{{ $file.name }}</span><span class="hm-ex">{{ lower $st.label }} · {{ $mark }}</span></div>
+                    <div class="hm-lines mono">
+                      {{- range $q, $l := $file.before }}
+                      <div class="hm-ln"><span class="hm-n" aria-hidden="true">{{ add $q 1 }}</span><pre class="hm-raw hm-t t-{{ $l.type }}">{{ $l.text }}</pre></div>
+                      {{- end }}
+                    </div>
+                    {{- else }}
+                    <div class="hm-bar"><span><span class="mono">store.db</span>, in a text editor</span><span class="hm-ex">{{ $mark }}</span></div>
+                    <p class="vh">{{ $f.app_bytes }}</p>
+                    {{- /* <pre> keeps the double spaces through the HTML minifier. */}}
+                    <pre class="hm-raw hm-hex mono" aria-hidden="true">0000  8f 3a 00 1c e2 7b 9d 04  .:...{..
+0008  10 00 00 2c 7e 01 ff 00  ...,~...
+0010  00 03 a1 5b 0e 00 <b>53 68</b>  ...[..<b>Sh</b>
+0018  <b>69 70 20 62 65 74 61</b> 09  <b>ip beta</b>.
+0020  00 00 c4 12 01 7f 00 00  ........
+0028  2e 0b 40 e6 11 00 00 00  ..@.....
+0030  e4 00 9a 06 00 00 31 b2  ......1.
+0038  7c 00 00 08 f0 3d 00 a7  |....=..</pre>
+                    {{- end }}
+                    {{- else if eq $st.key "app" }}
+                    <div class="hm-bar"><span class="hm-strong hm-bar-title">Workboard</span><span class="hm-ex">{{ if $c }}{{ lower $st.label }} · {{ end }}{{ $mark }}</span></div>
+                    <div class="hm-board">
+                      <p class="hm-board-sec{{ if $c }} t-heading{{ end }}">Work</p>
+                      <div class="hm-task">
+                        <span class="hm-box" aria-hidden="true"></span>
+                        <div class="hm-task-main">
+                          <div class="hm-task-title{{ if $c }} t-task{{ end }}"><span class="vh">Open: </span>Ship beta</div>
+                          <div class="hm-task-sub{{ if $c }} t-meta{{ end }}">Due 2026-04-01</div>
+                          <div class="hm-task-sub{{ if $c }} t-note{{ end }}">Waiting on icons from design.</div>
+                        </div>
+                      </div>
+                      <p class="hm-board-sec hm-board-sec--rule{{ if $c }} t-sep{{ end }}">{{ cond $c "Logbook" "Completed" }}</p>
+                      <div class="hm-task hm-task--done">
+                        <span class="hm-box hm-box--fill" aria-hidden="true">{{ $check }}</span>
+                        <div class="hm-task-main">
+                          <div class="hm-task-title{{ if $c }} t-task{{ end }}"><span class="vh">Done: </span>File taxes</div>
+                          <div class="hm-task-sub{{ if $c }} t-meta{{ end }}">Done 2026-03-20</div>
+                        </div>
+                      </div>
+                    </div>
+                    {{- else if eq $st.key "agent" }}
+                    {{- if $c }}
+                    <div class="hm-bar"><span><span class="mono">{{ $file.name }}</span>, parsed</span><span class="hm-ex">{{ lower $st.label }} · {{ $mark }}</span></div>
+                    <div class="hm-term mono">
+                      <div class="hm-kv"><span class="hm-k2">list</span><span class="hm-v hm-w t-title">Workboard</span><span class="hm-src">line 1</span></div>
+                      <div class="hm-kv hm-kv--gap"><span class="hm-k2">task</span><span class="hm-v hm-w t-task">Ship beta</span><span class="hm-src">line 3</span></div>
+                      <div class="hm-kv-in">
+                        <div class="hm-kv"><span class="hm-k2">state</span><span class="hm-v">open</span></div>
+                        <div class="hm-kv"><span class="hm-k2">section</span><span class="hm-v t-heading">Work</span><span class="hm-src">line 2</span></div>
+                        <div class="hm-kv"><span class="hm-k2">@due</span><span class="hm-v t-meta">2026-04-01</span><span class="hm-src">line 4</span></div>
+                        <div class="hm-kv"><span class="hm-k2">note</span><span class="hm-v t-note">Waiting on icons from design.</span><span class="hm-src">line 5</span></div>
+                      </div>
+                      <div class="hm-kv hm-kv--gap"><span class="hm-k2">task</span><span class="hm-v hm-w t-task">File taxes</span><span class="hm-src">line 7</span></div>
+                      <div class="hm-kv-in">
+                        <div class="hm-kv"><span class="hm-k2">state</span><span class="hm-v">done</span></div>
+                        <div class="hm-kv"><span class="hm-k2">region</span><span class="hm-v t-sep">archive</span><span class="hm-src">line 6</span></div>
+                        <div class="hm-kv"><span class="hm-k2">@done</span><span class="hm-v t-meta">2026-03-20</span><span class="hm-src">line 8</span></div>
+                      </div>
+                    </div>
+                    {{- else }}
+                    <div class="hm-bar"><span><span class="mono">store.db</span>, to an agent</span><span class="hm-ex">{{ $mark }}</span></div>
+                    <div class="hm-term mono">
+                      <pre class="hm-raw hm-pre"><span class="hm-dim">$</span> grep "Ship beta" store.db</pre>
+                      <pre class="hm-raw hm-pre hm-ink">Binary file store.db matches</pre>
+                      <div class="hm-kvs-rule">
+                        <div class="hm-kv"><span class="hm-k2">task</span><span class="hm-v hm-w">a match, but no line</span></div>
+                        <div class="hm-kv-in">
+                          <div class="hm-kv"><span class="hm-k2">state</span><span class="hm-v">unknown</span></div>
+                          <div class="hm-kv"><span class="hm-k2">section</span><span class="hm-v">unknown</span></div>
+                          <div class="hm-kv"><span class="hm-k2">@due</span><span class="hm-v">unknown</span></div>
+                          <div class="hm-kv"><span class="hm-k2">note</span><span class="hm-v">unknown</span></div>
+                        </div>
+                      </div>
+                      <p class="hm-term-note">{{ $f.app_agent }}</p>
+                    </div>
+                    {{- end }}
+                    {{- else }}{{ errorf "data/home.yaml: figure 2 has no view for the reader %q (text, app or agent)" $st.key }}
+                    {{- end }}
+                  </div>
+                  <div class="hm-strip">
+                    <div class="hm-bar"><span>{{ $f.strip }}</span><span class="hm-ex">{{ index $f.strip_note $mode }}</span></div>
+                    <div class="hm-strip-body"><p class="hm-say" data-say>{{ replace (index $st $mode) "{spec}" $s | markdownify }}</p></div>
+                  </div>
+                </div>
+
+                {{- else }}
+                <div class="hm-frame" data-frame="{{ $st.key }}">
+                  <p class="hm-frame-label" data-frame-label>Step {{ $k }} of {{ $N }}: {{ $st.label }}</p>
+                  <div class="hm-display">
+                    {{- if eq $st.key "propose" }}
+                    {{- if $c }}
+                    <div class="hm-bar"><span><span class="hm-strong">Proposal</span> <span class="mono">{{ $file.name }}</span></span><span class="hm-ex">{{ $mark }}</span></div>
+                    <div class="hm-body">
+                      <div class="hm-kvs mono">
+                        <div class="hm-kv"><span class="hm-k2">from:</span><span class="hm-v">an agent</span></div>
+                        <div class="hm-kv"><span class="hm-k2">change:</span><span class="hm-v">mark “Ship beta” done</span></div>
+                        <div class="hm-kv"><span class="hm-k2 hm-why">why:</span><span class="hm-v">{{ $f.why }}</span></div>
+                        <div class="hm-kv"><span class="hm-k2">status:</span><span class="hm-v">waiting for you</span></div>
+                      </div>
+                      <p class="hm-small hm-small--tight">On disk, unchanged</p>
+                      {{- $snip := slice }}{{ range first 3 (after 1 $file.before) }}{{ $snip = $snip | append .text }}{{ end }}
+                      <pre class="hm-raw hm-snip mono">{{ delimit $snip "\n" }}</pre>
+                    </div>
+                    {{- else }}
+                    <div class="hm-bar"><span><span class="hm-strong">Change</span> Ship beta</span><span class="hm-ex">{{ $mark }}</span></div>
+                    <div class="hm-body">
+                      <div class="hm-kvs mono">
+                        <div class="hm-kv"><span class="hm-k2">from:</span><span class="hm-v">an agent</span></div>
+                        <div class="hm-kv"><span class="hm-k2">change:</span><span class="hm-v">mark “Ship beta” done</span></div>
+                        <div class="hm-kv"><span class="hm-k2 hm-why">why:</span><span class="hm-v">not asked for</span></div>
+                        <div class="hm-kv"><span class="hm-k2">status:</span><span class="hm-v hm-ink">saved at once</span></div>
+                      </div>
+                      <p class="hm-small">In <span class="mono">store.db</span>, already changed</p>
+                      <div class="hm-saved">
+                        <span class="hm-box hm-box--fill hm-box--sm" aria-hidden="true"></span>
+                        <span class="hm-done"><span class="vh">Done: </span>Ship beta</span>
+                        <span class="hm-saved-tag">Saved</span>
+                      </div>
+                      <div class="hm-saved-sub">Due 2026-04-01</div>
+                    </div>
+                    {{- end }}
+                    {{- else if eq $st.key "preview" }}
+                    {{- if $c }}
+                    <div class="hm-bar"><span><span class="hm-strong">Preview</span> <span class="mono">{{ $file.name }}</span></span><span class="hm-ex">{{ $mark }}</span></div>
+                    <div class="hm-body">
+                      <p class="hm-whyline mono"><span class="hm-strong">why:</span> {{ $f.why }}</p>
+                      <div class="hm-diff mono">
+                        <div class="hm-dl hm-dl--ctx"><span class="hm-dm" aria-hidden="true"></span><pre class="hm-raw hm-dt">## Work</pre></div>
+                        <div class="hm-dl hm-dl--del"><span class="hm-dm" aria-hidden="true">−</span><pre class="hm-raw hm-dt"><span class="vh">Removed: </span>- [ ] Ship beta</pre></div>
+                        <div class="hm-dl hm-dl--add"><span class="hm-dm" aria-hidden="true">+</span><pre class="hm-raw hm-dt"><span class="vh">Added: </span>- [x] Ship beta</pre></div>
+                        <div class="hm-dl hm-dl--ctx"><span class="hm-dm" aria-hidden="true"></span><pre class="hm-raw hm-dt">  @due: 2026-04-01</pre></div>
+                        <div class="hm-dl hm-dl--add"><span class="hm-dm" aria-hidden="true">+</span><pre class="hm-raw hm-dt"><span class="vh">Added: </span>  @done: 2026-04-01</pre></div>
+                        <div class="hm-dl hm-dl--ctx"><span class="hm-dm" aria-hidden="true"></span><pre class="hm-raw hm-dt">  Waiting on icons from design.</pre></div>
+                      </div>
+                      <p class="hm-small hm-small--after"><span class="hm-add hm-w">+2</span> <span class="hm-del hm-w">−1</span> lines. {{ $f.commons_preview }}</p>
+                    </div>
+                    {{- else }}
+                    <div class="hm-bar"><span><span class="hm-strong">Preview</span> Ship beta</span><span class="hm-ex">{{ $mark }}</span></div>
+                    <div class="hm-body">
+                      <p class="hm-whyline mono"><span class="hm-strong">why:</span> not recorded</p>
+                      <div class="hm-void">
+                        <p class="hm-void-title">{{ $f.app_preview.title }}</p>
+                        <p class="hm-void-text">{{ $f.app_preview.text | markdownify }}</p>
+                      </div>
+                      <p class="hm-small hm-small--after">{{ $f.app_preview.foot }}</p>
+                    </div>
+                    {{- end }}
+                    {{- else if eq $st.key "accept" }}
+                    {{- if $c }}
+                    <div class="hm-bar"><span><span class="mono">{{ $file.name }}</span>, written</span><span class="hm-ex">{{ $mark }}</span></div>
+                    <div class="hm-lines mono">
+                      {{- range $q, $l := $file.after }}
+                      <div class="hm-ln{{ if $l.change }} hm-ln--chg{{ end }}"><span class="hm-n" aria-hidden="true">{{ add $q 1 }}</span><pre class="hm-raw hm-t t-{{ $l.type }}">{{ with $l.change }}<span class="vh">{{ . }}: </span>{{ end }}{{ $l.text }}</pre></div>
+                      {{- end }}
+                    </div>
+                    {{- else }}
+                    <div class="hm-bar"><span><span class="hm-strong">Workboard</span>, as saved</span><span class="hm-ex">{{ $mark }}</span></div>
+                    <div class="hm-board">
+                      <p class="hm-board-sec">Work</p>
+                      <div class="hm-task hm-task--done">
+                        <span class="hm-box hm-box--fill" aria-hidden="true">{{ $check }}</span>
+                        <div class="hm-task-main">
+                          <div class="hm-task-row"><span class="hm-task-title"><span class="vh">Done: </span>Ship beta</span><span class="hm-task-state">Done</span></div>
+                          <div class="hm-task-sub">Due 2026-04-01</div>
+                          <div class="hm-task-sub">Waiting on icons from design.</div>
+                        </div>
+                      </div>
+                      <div class="hm-board-foot"><span>Saved</span><span>2026-04-01</span></div>
+                      <p class="hm-small hm-small--after">{{ $f.app_accept }}</p>
+                    </div>
+                    {{- end }}
+                    {{- else if eq $st.key "log" }}
+                    {{- if $c }}
+                    <div class="hm-bar"><span>Log, after you accept</span><span class="hm-ex">{{ $mark }}</span></div>
+                    <div class="hm-body">
+                      <div class="hm-kvs mono">
+                        <pre class="hm-raw hm-pre"><span class="hm-dim">2026-04-01</span>  accepted  {{ $file.name }}</pre>
+                        <div class="hm-kv hm-kv--gap"><span class="hm-k2 hm-why">why:</span><span class="hm-v">{{ $f.why }}</span></div>
+                        <div class="hm-kv"><span class="hm-k2">what:</span><span class="hm-v">Ship beta <span class="hm-del">[ ]</span> → <span class="hm-add">[x]</span>, <span class="hm-add">+@done</span></span></div>
+                        <div class="hm-kv"><span class="hm-k2">from:</span><span class="hm-v">an agent, accepted by you</span></div>
+                      </div>
+                      <p class="hm-body-note">{{ $f.commons_log | markdownify }}</p>
+                    </div>
+                    {{- else }}
+                    <div class="hm-bar"><span>History, afterwards</span><span class="hm-ex">{{ $mark }}</span></div>
+                    <div class="hm-body">
+                      <div class="hm-kvs mono">
+                        <pre class="hm-raw hm-pre"><span class="hm-dim">2026-04-01</span>  modified  Ship beta</pre>
+                        <div class="hm-kv hm-kv--gap"><span class="hm-k2 hm-why">why:</span><span class="hm-v hm-ink">not recorded</span></div>
+                        <div class="hm-kv"><span class="hm-k2">what:</span><span class="hm-v">Ship beta, now done</span></div>
+                        <div class="hm-kv"><span class="hm-k2">from:</span><span class="hm-v">an agent, saved without review</span></div>
+                      </div>
+                      <p class="hm-body-note">{{ $f.app_log }}</p>
+                    </div>
+                    {{- end }}
+                    {{- else }}{{ errorf "data/home.yaml: figure 3 has no view for the step %q (propose, preview, accept or log)" $st.key }}
+                    {{- end }}
+                  </div>
+                  <div class="hm-say-strip"><p class="hm-say" data-say>{{ replace (index $st $mode) "{spec}" $s | markdownify }}</p></div>
+                </div>
+                {{- end }}
+                {{- end }}
+                </div>
+
+                {{- if eq $f.kind "writes" }}
+                <div class="hm-nav" data-js hidden>
+                  <button type="button" class="hm-back" data-back aria-disabled="true">{{ $d.figures.back }}</button>
+                  <span class="hm-count">Step <span data-step-num>1</span> of {{ $N }}</span>
+                  <button type="button" class="hm-next" data-next>{{ (index $f.steps 0).next }}</button>
+                </div>
+                {{- end }}
+              </div>
+              <figcaption class="hm-cap"><span class="hm-lead">Fig. {{ $n }}.</span> {{ index $f.caption $mode | markdownify }}</figcaption>
+            </figure>
+            {{- end }}
+          </div>
+          <p class="vh" aria-live="polite" data-live="{{ $f.kind }}"></p>
+          <dl class="hm-facts">
+            <div class="hm-fact hm-fact--verdict">
+              <dt>Verdict</dt>
+              <dd class="hm-ov">
+                {{- range $modes }}
+                <span class="hm-o" data-for="{{ . }}">{{ index $f.verdict . }}</span>
+                {{- end }}
+              </dd>
+            </div>
+            <div class="hm-fact">
+              <dt>Plaintext Test</dt>
+              <dd>Question {{ $f.test.number }}: “{{ $f.test.question }}”</dd>
+            </div>
+            <div class="hm-fact">
+              <dt>On this site</dt>
+              <dd>
+                {{- with $f.site.glossary }}
+                {{- $g := index (where $glossary "id" .) 0 }}
+                {{- if not $g }}{{ errorf "data/home.yaml: law %d cites the glossary term %q, which is not in data/glossary.yaml" $n . }}{{ end }}
+                <a href="{{ "/glossary/" | relURL }}#{{ $g.id }}">Glossary: {{ lower $g.term }}</a>. “{{ $g.definition | markdownify }}”
+                {{- else }}
+                <a href="{{ $f.site.url | relURL }}">{{ $f.site.label }}</a>. {{ $f.site.text | markdownify }}
+                {{- end }}
+              </dd>
+            </div>
+          </dl>
+        </article>
         {{- end }}
-      </ol>
+      </div>
+
+      <p class="hm-test" role="note"><span class="hm-lead">{{ $d.test.label }}</span> {{ $d.test.text }} “{{ $d.test.fourth.question }}” <a href="{{ "/manifesto/" | relURL }}#the-plaintext-test">{{ $d.test.link }}</a></p>
     </section>
 
-    <section class="home-section" aria-labelledby="formats">
-      <h2 id="formats">Formats</h2>
-      <p style="max-width: 680px">Versioned, human-readable file formats that keep the file as the source of truth while giving apps and agents enough structure to read and write it safely.</p>
-      <div class="table-wrap">
-        <table class="booktabs">
-          <thead><tr><th scope="col">Format</th><th scope="col">For</th><th scope="col">Extension</th><th scope="col">Latest</th><th scope="col">Status</th></tr></thead>
+    {{- /* ---------- §2 Formats: one row per format section, read from its latest specification ---------- */}}
+    {{- $drafts := 0 }}
+    <section id="formats" class="hm-sec" aria-labelledby="h-formats">
+      <h2 id="h-formats" class="hm-h2"><span class="sec">§2</span>{{ $d.formats.heading }}</h2>
+      <div class="hm-split hm-intro">
+        <p class="hm-lede">{{ $d.formats.intro }}<sup class="hm-fn">1</sup></p>
+        <aside class="hm-side"><sup class="hm-fn">1</sup> {{ $d.formats.footnote }}</aside>
+      </div>
+      <div class="table-wrap hm-table-wrap" role="region" aria-labelledby="h-formats" tabindex="0">
+        <table class="booktabs hm-formats">
+          <thead>
+            <tr><th scope="col">Format</th><th scope="col">Extension</th><th scope="col" class="num">Latest</th><th scope="col">Status</th><th scope="col">Published</th><th scope="col" class="num">Rules</th><th scope="col">Read</th></tr>
+          </thead>
           <tbody>
             {{- range $formats }}
+            {{- $fmt := . }}
+            {{- $latest := index (where .RegularPages "Type" "spec").ByDate.Reverse 0 }}
+            {{- $status := .Params.status }}
+            {{- with $latest }}{{ with .Params.status }}{{ $status = . }}{{ end }}{{ end }}
+            {{- if eq $status "Working draft" }}{{ $drafts = add $drafts 1 }}{{ end }}
             <tr>
-              <td><a href="{{ .RelPermalink }}" style="font-weight: 600">{{ .Title }}</a></td>
-              <td>{{ .Params.summary }}</td>
-              <td class="mono" style="font-size: 14px">{{ .Params.extension }}</td>
-              <td><a class="mono" style="font-size: 14px" href="{{ .RelPermalink }}v{{ .Params.latest }}/">{{ .Params.latest }}</a></td>
-              <td>{{ partial "status.html" .Params.status }}</td>
+              <td class="hm-fmt">
+                <a class="hm-fmt-name" href="{{ .RelPermalink }}">{{ .Title }}</a>
+                <div class="hm-fmt-sum">{{ .Params.summary }}</div>
+                {{- with index $d.formats.samples .Params.shortname }}
+                <code class="hm-fmt-sample">{{ range . }}{{ with .class }}<span class="{{ . }}">{{ end }}{{ .text }}{{ if .class }}</span>{{ end }}{{ end }}</code>
+                {{- end }}
+              </td>
+              <td class="hm-cell-pad" data-label="Extension"><code>{{ .Params.extension }}</code></td>
+              <td class="hm-cell-pad num" data-label="Latest">{{ with $latest }}<a class="mono" href="{{ .RelPermalink }}">{{ .Params.version }}</a>{{ end }}</td>
+              <td data-label="Status">{{ partial "status.html" $status }}</td>
+              <td class="hm-cell-pad hm-nowrap" data-label="Published">{{ with $latest }}{{ .Date.Format "2006-01-02" }}{{ end }}</td>
+              <td class="hm-cell-pad num" data-label="Rules"><div>
+                {{- with $latest }}
+                {{- $rules := partial "rules.html" . }}
+                {{- with $rules }}
+                {{- $prefix := index (split (index . 0).id "-") 0 }}
+                {{- $nums := slice }}{{ range . }}{{ $nums = $nums | append (int (index (split .id "-") 1)) }}{{ end }}
+                {{- $nums = sort $nums }}
+                {{ len . }}<div class="hm-rsub"><span class="mono">{{ $prefix }}-{{ index $nums 0 }}</span> to <span class="mono">{{ $prefix }}-{{ index $nums (sub (len $nums) 1) }}</span></div>
+                {{- end }}
+                {{- with .Params.open_rules }}
+                {{- $sp := $latest.RelPermalink }}
+                <div class="hm-rsub">{{ index $words (len .) }} open, {{ range $q, $r := . }}{{ if $q }}, {{ end }}<a class="mono" href="{{ $sp }}#{{ $r }}">{{ $r }}</a>{{ end }}</div>
+                {{- end }}
+                {{- end }}
+              </div></td>
+              <td class="hm-cell-pad" data-label="Read">
+                <ul class="hm-read">
+                  {{- with $latest }}<li><a href="{{ .RelPermalink }}">{{ .Params.navTitle | default "Specification" }}</a></li>{{ end }}
+                  {{- range (where .RegularPages "Params.role" "in" (slice "guide" "atlas" "companion")).ByWeight }}
+                  <li><a href="{{ .RelPermalink }}">{{ .Params.navTitle | default .Title }}</a></li>
+                  {{- end }}
+                  {{- range (where .RegularPages "Params.role" "history").ByWeight }}
+                  <li><a href="{{ .RelPermalink }}">{{ .Params.navTitle | default .Title }}</a></li>
+                  {{- end }}
+                </ul>
+              </td>
             </tr>
             {{- end }}
           </tbody>
         </table>
       </div>
-    </section>
-
-    <section class="home-section" aria-labelledby="start">
-      <h2 id="start">Start here</h2>
-      <div class="starts">
-        <a href="{{ "/manifesto/" | relURL }}"><span class="s-title">Read the manifesto</span><span class="s-text">The stance in one page: nine principles, three laws, and norms for tools and agents.</span></a>
-        <a href="{{ "/manifesto/" | relURL }}#the-plaintext-test"><span class="s-title">Take the Plaintext Test</span><span class="s-text">Four questions to ask before you adopt a tool or a workflow.</span></a>
-        <a href="{{ "/formats/" | relURL }}"><span class="s-title">Use a format</span><span class="s-text">Specifications with rules you can cite, and guides that show every rule by example.</span></a>
+      <div class="hm-split hm-after">
+        {{- $process := site.GetPage "/formats/process" }}
+        {{- $nf := len $formats }}
+        <p class="hm-lede">
+          {{- if and $nf (eq $drafts $nf) -}}
+          {{ if eq $nf 1 }}It is a working draft{{ else if eq $nf 2 }}Both are working drafts{{ else }}All {{ index $words $nf | default $nf }} are working drafts{{ end }}: {{ $d.formats.drafts }}
+          {{- else -}}
+          {{ $d.formats.mixed }}
+          {{- end }}
+          {{- with $process }} <a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ end -}}
+        </p>
+        {{- $opens := slice }}
+        {{- range $formats }}{{ $fmt := . }}{{ with index $d.formats.open .Params.shortname }}{{ $opens = $opens | append (dict "name" (humanize $fmt.Params.shortname) "text" .) }}{{ end }}{{ end }}
+        {{- with $opens }}
+        <aside class="hm-side"><span class="hm-lead">{{ $d.formats.open_label }}</span>{{ range . }} {{ .name }}: {{ .text | markdownify }}{{ end }}</aside>
+        {{- end }}
       </div>
     </section>
 
-    <section class="home-section" aria-labelledby="machines">
-      <h2 id="machines">For tools and agents</h2>
-      <div class="table-wrap" style="max-width: 900px">
-        <table class="booktabs">
-          <thead><tr><th scope="col">Address</th><th scope="col">What it holds</th></tr></thead>
-          <tbody>
-            <tr><td class="mono" style="font-size: 14px">…/index.md</td><td>Every page as plain Markdown, next to the page itself</td></tr>
-            <tr><td><a class="mono" style="font-size: 14px" href="{{ "formats.json" | relURL }}">/formats.json</a></td><td>Every format, version, status and address</td></tr>
-            <tr><td><a class="mono" style="font-size: 14px" href="{{ "llms.txt" | relURL }}">/llms.txt</a></td><td>A short entry point for language models</td></tr>
-            <tr><td class="mono" style="font-size: 14px">/{format}/v{x.y.z}/rules.json</td><td>The rules of one version, with IDs and anchors</td></tr>
-          </tbody>
-        </table>
+    {{- /* ---------- §3 For programs ---------- */}}
+    <section id="programs" class="hm-sec" aria-labelledby="h-programs">
+      <h2 id="h-programs" class="hm-h2"><span class="sec">§3</span>{{ $d.programs.heading }}</h2>
+      <div class="hm-split hm-programs">
+        <div class="table-wrap hm-prog">
+          <table class="booktabs">
+            <thead><tr><th scope="col">Address</th><th scope="col">What it holds</th></tr></thead>
+            <tbody>
+              <tr><td class="hm-addr mono">…/index.md</td><td>{{ $d.programs.markdown }}</td></tr>
+              {{- with .OutputFormats.Get "Formats" }}
+              <tr><td class="hm-addr"><a class="mono" href="{{ .RelPermalink }}">{{ .RelPermalink }}</a></td><td>{{ $d.programs.formats }}</td></tr>
+              {{- end }}
+              {{- with .OutputFormats.Get "Llms" }}
+              <tr><td class="hm-addr"><a class="mono" href="{{ .RelPermalink }}">{{ .RelPermalink }}</a></td><td>{{ $d.programs.llms }}</td></tr>
+              {{- end }}
+              {{- range $formats }}
+              {{- $fmt := . }}
+              {{- range (where .RegularPages "Type" "spec").ByDate.Reverse }}
+              {{- $sp := . }}
+              {{- with .OutputFormats.Get "Rules" }}
+              {{- $t := replace $d.programs.rules "{n}" (string (len (partial "rules.html" $sp))) }}
+              {{- $t = replace (replace $t "{format}" $fmt.Title) "{version}" (printf "`%s`" $sp.Params.version) }}
+              <tr><td class="hm-addr"><a class="mono" href="{{ .RelPermalink }}">{{ .RelPermalink }}</a></td><td>{{ $t | markdownify }}</td></tr>
+              {{- end }}
+              {{- end }}
+              {{- end }}
+            </tbody>
+          </table>
+        </div>
+        <aside class="hm-side hm-prog-side">
+          {{- with .OutputFormats.Get "Markdown" }}
+          <p>{{ replace $d.programs.agents "{twin}" (printf "[`%s`](%s)" .RelPermalink .RelPermalink) | markdownify }}</p>
+          {{- end }}
+          {{- range $formats }}
+          {{- $fmt := . }}
+          {{- range (where .RegularPages "Type" "spec").ByDate.Reverse }}
+          {{- $sp := . }}
+          {{- $parts := slice }}
+          {{- range .Params.files }}
+          {{- $phrase := index $d.programs.files .key }}
+          {{- if $phrase }}
+          {{- if in $phrase "{n}" }}
+          {{- $dir := printf "static%s" (path.Dir .url) }}
+          {{- $count := 0 }}
+          {{- if fileExists $dir }}{{ range os.ReadDir $dir }}{{ if and (not .IsDir) (strings.HasSuffix .Name $fmt.Params.extension) }}{{ $count = add $count 1 }}{{ end }}{{ end }}{{ end }}
+          {{- if $count }}{{ $parts = $parts | append (replace $phrase "{n}" (string $count)) }}{{ end }}
+          {{- else }}
+          {{- $parts = $parts | append $phrase }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- with $parts }}
+          {{- $t := replace $d.programs.files_sentence "{files}" (delimit . ", " " and ") }}
+          <p>{{ replace (replace $t "{format}" $fmt.Title) "{version}" (printf "`%s`" $sp.Params.version) | markdownify }}</p>
+          {{- end }}
+          {{- end }}
+          {{- end }}
+        </aside>
       </div>
     </section>
   </main>
 </div>
 {{ end }}
+
+{{ define "scripts" }}<script src="{{ "js/home.js" | relURL }}" defer></script>{{ end }}
