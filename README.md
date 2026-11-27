@@ -7,7 +7,7 @@ make dev     # live preview at http://localhost:1313
 make build   # production build into ./public
 ```
 
-Production builds on DigitalOcean with Hugo 0.139 (extended). Keep templates compatible with it: classic `layouts/` structure, `site.Data`, no features newer than 0.139.
+Production builds on DigitalOcean with Hugo 0.164 (extended), set by `HUGO_VERSION` in the app spec. Every push to `main` deploys, so build locally with the same Hugo version first; a failed build leaves the previous deploy live.
 
 ## How the content is organised
 
