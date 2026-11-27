@@ -4,12 +4,12 @@
 # A snippet line is { t: text, k: kind } or { segs: [{ t, k }, …] }.
 # Kinds: title, heading, task, meta, note, sep, blank, ws (visible whitespace), del, add (a rewrite, as a diff).
 # Cell anchors are cell-<row id>-c|t|i; the checker in static/js/tasks.js links to them.
-# Rule IDs must exist in content/tasks/v1.0.0.md; the templates fail the build otherwise.
+# Rule IDs must exist in content/tasks/v0.1.1.md; the templates fail the build otherwise.
 
 columns:
   - { key: c, verdict: valid, word: "Canonical", def: "What a canonical writer emits." }
   - { key: t, verdict: tolerated, word: "Tolerated", def: "Accepted, but not the canonical or recommended form." }
-  - { key: i, verdict: invalid, word: "Invalid", def: "Breaks a rule of 1.0.0." }
+  - { key: i, verdict: invalid, word: "Invalid", def: "Breaks a rule of 0.1.1." }
 
 groups:
   - label: "Task"
@@ -25,7 +25,7 @@ groups:
         t: { empty: "The spec grants no tolerance for the bullet." }
         i:
           lines: [{ t: "* [ ] Ship beta", k: task }]
-          reason: "Only `-` is valid as the task bullet in 1.0.0."
+          reason: "Only `-` is valid as the task bullet in 0.1.1."
           rules: [T-5]
           sections: []
       - id: task-state
@@ -108,7 +108,7 @@ groups:
             - { t: "- [ ] Ship beta", k: task }
             - { t: "  - [ ] Email QA", k: task }
             - { t: "    @due: 2026-04-01", k: meta }
-          reason: "Only non-nested tasks carry metadata in 1.0.0."
+          reason: "Only non-nested tasks carry metadata in 0.1.1."
           rules: [T-11, T-27, T-54]
           sections: []
       - id: meta-value
@@ -310,7 +310,7 @@ groups:
           sections: ["4"]
         i: { empty: "The spec lists nothing as invalid here." }
 
-# The one known open question in 1.0.0.
+# The one known open question in 0.1.1.
 open:
   id: open-root-note
   label: "Not settled"
@@ -428,7 +428,7 @@ example:
     - {"line":11,"text":"  @due:2026-12-1","type":"meta","verdict":"tolerated"}
     - {"line":12,"text":"# Errands","type":"title","verdict":"tolerated"}
   problems:
-    - {"line":3,"verdict":"invalid","title":"Wrong task bullet","hint":"Only `-` is a valid task bullet in 1.0.0.","rules":["T-5"],"sections":[],"cell":"task-bullet-i"}
+    - {"line":3,"verdict":"invalid","title":"Wrong task bullet","hint":"Only `-` is a valid task bullet in 0.1.1.","rules":["T-5"],"sections":[],"cell":"task-bullet-i"}
     - {"line":4,"verdict":"invalid","title":"Uppercase `[X]`","hint":"The done state is `[x]`, lowercase.","rules":[],"sections":["7.4"],"cell":"task-state-i"}
     - {"line":5,"verdict":"invalid","title":"Checkbox spacing","hint":"Write `- [ ]` with exactly one space after the dash.","rules":["T-6"],"sections":[],"cell":"task-spacing-i"}
     - {"line":7,"verdict":"invalid","title":"Metadata not indented","hint":"Metadata lines are indented deeper than their task.","rules":["T-10"],"sections":[],"cell":"meta-placement-i"}

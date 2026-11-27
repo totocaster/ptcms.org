@@ -95,7 +95,7 @@
         rec.type = 'task'; rec.meta = []; seenContent = true;
         if (width === 0) rootTaskInRegion = true;
         var bm = /^- \[([^\]]*)\]/.exec(body);
-        if (/^[*+]/.test(body)) invalid('Wrong task bullet', 'Only `-` is a valid task bullet in 1.0.0.', ['T-5'], [], 'task-bullet-i');
+        if (/^[*+]/.test(body)) invalid('Wrong task bullet', 'Only `-` is a valid task bullet in 0.1.1.', ['T-5'], [], 'task-bullet-i');
         else if (!bm) invalid('Checkbox spacing', 'Write `- [ ]` with exactly one space after the dash.', ['T-6'], [], 'task-spacing-i');
         else if (bm[1] === 'X') invalid('Uppercase `[X]`', 'The done state is `[x]`, lowercase.', [], ['7.4'], 'task-state-i');
         else if (bm[1].length === 1 && !STATES.hasOwnProperty(bm[1])) invalid('Unknown state', 'The four states are `[ ]`, `[x]`, `[>]` and `[-]`.', [], ['7.4'], 'task-state-i');
@@ -282,7 +282,7 @@
   /* ----- Atlas: the checker ----- */
 
   function initChecker(root) {
-    var spec = root.getAttribute('data-spec') || '/tasks/v1.0.0/';
+    var spec = root.getAttribute('data-spec') || '/tasks/v0.1.1/';
     var ta = root.querySelector('textarea');
     var samples = root.querySelector('[data-samples]');
     var sampleBtns = root.querySelectorAll('[data-sample]');

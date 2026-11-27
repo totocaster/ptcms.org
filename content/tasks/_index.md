@@ -6,8 +6,8 @@ summary: "A strict plain-text task format for people, apps and agents."
 description: "Plaintext Tasks: a strict plain-text task format with versioned specifications, guides and machine-readable rules."
 shortname: "tasks"
 extension: ".tasks.md"
-status: "Draft"
-latest: "1.0.0"
+status: "Working draft"
+latest: "0.1.1"
 updated: 2026-03-26
 weight: 10
 aliases:

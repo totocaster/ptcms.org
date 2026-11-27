@@ -30,7 +30,7 @@ Every page also renders as Markdown at `index.md` beside it. The home page adds 
 - Number sections with anchors: `## Line types {#section-7}`, `### Task line {#section-7.4}`. They render as `§7`, and the Markdown twin prints `## 7 Line types`.
 - Write each rule as a one-line quote: `> **T-10 · MUST · writers** Metadata lines must be …`. Strength (`MUST`, `MUST NOT`, `SHOULD`, `SHOULD NOT`, `MAY`) and who it applies to are optional. The rule renders with its ID in the margin, appears in "Rules at a glance" and in `rules.json`, and gets the anchor `#T-10`. Never reuse an ID.
 - Margin notes: `{{< note >}}…{{< /note >}}` inline, `{{< aside >}}…{{< /aside >}}` for a block placed before the paragraph it annotates.
-- A published version is frozen. To change a rule, add a new version file and move the moving aliases (`/{format}/latest/`, `/{format}/v1/`, `/{format}/v1.0/`) from the old version's front matter to the new one.
+- A published version is frozen. To change a rule, add a new version file and move the moving aliases (`/{format}/latest/`, `/{format}/v{major}/`, `/{format}/v{major}.{minor}/`) from the old version's front matter to the new one.
 
 ## Adding a format
 

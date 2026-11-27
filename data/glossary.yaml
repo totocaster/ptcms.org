@@ -16,7 +16,7 @@
   definition: "Lightweight metadata at the top of a Markdown file (e.g., YAML)."
 - id: frozen-version
   term: "frozen version"
-  definition: "A published version of a specification at its own address, such as `/tasks/v1.0.0/`. Its text never changes; corrections arrive as a new version."
+  definition: "A published version of a specification at its own address, such as `/tasks/v0.1.1/`. Its text never changes; corrections arrive as a new version."
 - id: plaintext-files
   term: "plaintext files"
   definition: "Human-readable documents in Markdown or .txt."
@@ -34,7 +34,7 @@
   definition: "A simple history/log explaining why changes were applied, not only what changed."
 - id: rule-id
   term: "rule ID"
-  definition: "The stable name of one rule in a specification, such as `T-10`. It is never reused, so a citation like “Plaintext Tasks 1.0.0, T-10” always means the same thing."
+  definition: "The stable name of one rule in a specification, such as `T-10`. It is never reused, so a citation like “Plaintext Tasks 0.1.1, T-10” always means the same thing."
 - id: sidecar
   term: "sidecar / metadata file"
   definition: "A tiny `.json`/`.yaml` file placed next to a `.txt` note when metadata is needed."

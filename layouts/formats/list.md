@@ -20,4 +20,4 @@
 {{ end }}
 ## 4 Citing a format
 
-Cite the name, the full version and, when you mean one rule, its ID: "Plaintext Tasks 1.0.0, rule T-10", linked as https://plaintextcommons.org/tasks/v1.0.0/#T-10.
+Cite the name, the full version and, when you mean one rule, its ID: "Plaintext Tasks 0.1.1, rule T-10", linked as https://plaintextcommons.org/tasks/v0.1.1/#T-10.

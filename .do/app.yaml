@@ -9,6 +9,6 @@ static_sites:
     name: ptcmsorg
     env:
       - key: HUGO_VERSION
-        value: '0.139.0'
+        value: '0.164.0'
       - key: HUGO_EXTENDED
         value: '1'

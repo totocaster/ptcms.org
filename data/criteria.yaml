@@ -12,5 +12,5 @@
   caption: "Marking a task done touches two lines."
 - title: "Versioned and frozen."
   text: "Every version of a specification has its own address, and the text at that address never changes. A new version gets a new address."
-  example: "/tasks/v1.0.0/"
+  example: "/tasks/v0.1.1/"
   caption: "Cite this and the meaning cannot drift."

@@ -1,7 +1,7 @@
 # Plaintext Tasks at a glance: the annotated quick example.
 # Read by layouts/tasks-guide/single.html and single.md.
 # Line types: title, heading, task, meta, note, sep, blank.
-# Rule IDs must exist in content/tasks/v1.0.0.md; the templates fail the build otherwise.
+# Rule IDs must exist in content/tasks/v0.1.1.md; the templates fail the build otherwise.
 
 lines:
   - { text: "# Workboard", type: title }
@@ -68,7 +68,7 @@ notes:
     short: "A note at root, under a heading"
     topic: "Note line"
     text: "Notes attach to the nearest heading or task one level up, and must be indented deeper than their parent. This line in the spec’s own example sits at root under `## Work`, so the example and the rule disagree."
-    open: "Either a note may sit at root under its heading, or the example should indent this line. Version 1.0.0 doesn’t say which."
+    open: "Either a note may sit at root under its heading, or the example should indent this line. Version 0.1.1 doesn’t say which."
     rules: [T-14, T-25, T-41]
     sections: ["6", "7.6"]
     targets: [5]
@@ -79,7 +79,7 @@ notes:
     side: R
     short: "Only `-` is a task bullet"
     topic: "Task line"
-    text: "A task line is `- [ ]`, one space, then the title. Only `-` is valid as the bullet in 1.0.0, the checkbox token must be spaced exactly as shown, and the title is plain text."
+    text: "A task line is `- [ ]`, one space, then the title. Only `-` is valid as the bullet in 0.1.1, the checkbox token must be spaced exactly as shown, and the title is plain text."
     rules: [T-5, T-6, T-7]
     sections: ["7.4"]
     targets: [7, 15, 20, 27, 30]

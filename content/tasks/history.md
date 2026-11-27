@@ -7,7 +7,7 @@ weight: 90
 eyebrow: "Format F-1 · History"
 summary: "Every version of Plaintext Tasks, what changed in it, and why."
 changes:
-  - version: "1.0.0"
+  - version: "0.1.1"
     date: 2026-03-26
     summary: "First published version."
     why: ""

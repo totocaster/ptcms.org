@@ -36,7 +36,7 @@ What moves a format from one stage to the next, such as how many independent imp
 
 > **U-3** Status is a property of a version, shown on its page and in `/formats.json`, never part of the address.
 
-> **U-4** Frozen version pages are canonical. Moving addresses such as `/tasks/latest/` and `/tasks/v1/` redirect to them.
+> **U-4** Frozen version pages are canonical. Moving addresses such as `/tasks/latest/` and `/tasks/v0/` redirect to them.
 
 > **U-5** Guides are not normative. They live beside the specification, follow the latest version and say which version they describe.
 
